@@ -29,9 +29,9 @@ public sealed class LetterParagraph
 /// &lt;funletter version="1"&gt;
 ///   &lt;page size="A4" units="mm" top="25" bottom="25" left="25" right="25"/&gt;
 ///   &lt;glyphs&gt;
-///     &lt;glyph id="1" char="a"&gt;&lt;row&gt;....##......&lt;/row&gt; … 16 rows&lt;/glyph&gt;
+///     &lt;glyph id="1" char="a" columns="18" rows="24"&gt;&lt;row&gt;......##..........&lt;/row&gt; … 24 rows&lt;/glyph&gt;
 ///   &lt;/glyphs&gt;
-///   &lt;fonts&gt;
+///   &lt;fonts current="1"&gt;
 ///     &lt;font id="1"&gt;&lt;use glyph="1"/&gt;&lt;/font&gt;
 ///   &lt;/fonts&gt;
 ///   &lt;text&gt;
@@ -54,6 +54,8 @@ public sealed class Letter
     public List<LetterParagraph> Paragraphs { get; } = new();
     public List<Glyph> Glyphs { get; } = new();
     public List<(int Id, List<int> GlyphIds)> Fonts { get; } = new();
+    /// <summary>The font version new typing uses. Older files leave it out.</summary>
+    public int? CurrentFont { get; set; }
 
     static double DipToPt(double dip) => Math.Round(dip * 72.0 / 96.0 * 2) / 2; // nearest half point
     static double PtToDip(double pt) => pt * 96.0 / 72.0;
@@ -88,6 +90,7 @@ public sealed class Letter
         // plus the current one so the child's latest letters come back.
         var used = letter.Paragraphs.SelectMany(p => p.Runs).Select(r => r.Font).ToHashSet();
         used.Add(designs.Current.Id);
+        letter.CurrentFont = designs.Current.Id;
         foreach (var version in designs.Versions.Where(v => v.Id != 0 && used.Contains(v.Id)))
             letter.Fonts.Add((version.Id, version.Glyphs.Values.Select(g => g.Id).OrderBy(id => id).ToList()));
         var usedGlyphs = letter.Fonts.SelectMany(f => f.GlyphIds).ToHashSet();
@@ -183,7 +186,9 @@ public sealed class Letter
                     new XAttribute("left", MarginLeft),
                     new XAttribute("right", MarginRight)),
                 new XElement("glyphs", Glyphs.OrderBy(g => g.Id).Select(GlyphXml.Write)),
-                new XElement("fonts", Fonts.OrderBy(f => f.Id).Select(f => new XElement("font",
+                new XElement("fonts",
+                    CurrentFont is int current ? new XAttribute("current", current) : null,
+                    Fonts.OrderBy(f => f.Id).Select(f => new XElement("font",
                     new XAttribute("id", f.Id),
                     f.GlyphIds.Select(id => new XElement("use", new XAttribute("glyph", id)))))),
                 new XElement("text",
@@ -224,6 +229,7 @@ public sealed class Letter
             if (GlyphXml.Read(g) is { Id: > 0 } glyph && Designs.AllCharacters.Contains(glyph.Char))
                 letter.Glyphs.Add(glyph);
 
+        letter.CurrentFont = (int?)root.Element("fonts")?.Attribute("current");
         foreach (var f in root.Element("fonts")?.Elements("font") ?? [])
             if ((int?)f.Attribute("id") is int id and > 0)
                 letter.Fonts.Add((id, f.Elements("use").Select(u => (int?)u.Attribute("glyph") ?? 0).ToList()));

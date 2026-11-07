@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace SimpleFunLetters;
@@ -149,14 +150,116 @@ public partial class MainWindow
         Editor.Focus();
     }
 
-    // ---------------------------------------------------------- page fit
+    /// <summary>
+    /// Like Done, and also changes this character everywhere it has already
+    /// been written. Only this character changes: other letters in that text
+    /// keep their drawings. One Undo puts the old text back.
+    /// </summary>
+    void ApplyToExisting_Click(object sender, RoutedEventArgs e)
+    {
+        if (drawingChar is not char c) return;
 
-    /// <summary>Shrinks the page to fit beside the letters on smaller screens.</summary>
+        if (designs.Redesign(c, Drawing.Pixels))
+        {
+            designs.SaveMyLetters();
+            RefreshTile(c, tiles[c]);
+        }
+
+        bool changed = false;
+        Editor.LockCurrentUndoUnit();
+        Editor.BeginChange();
+        try
+        {
+            foreach (var run in AllRuns(Editor.Document.Blocks))
+            {
+                if (!run.Text.Contains(c)) continue;
+                var old = designs.VersionOf(run.FontFamily);
+                var updated = designs.WithCurrentDrawingOf(old, c);
+                if (updated == old) continue;
+                run.FontFamily = updated.Family;
+                changed = true;
+            }
+        }
+        finally
+        {
+            Editor.EndChange();
+        }
+        Editor.LockCurrentUndoUnit();
+        if (changed) MarkDirty();
+
+        CloseDrawing();
+        Editor.Focus();
+    }
+
+    static IEnumerable<Run> AllRuns(IEnumerable<Block> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            if (block is Paragraph p)
+                foreach (var run in AllRuns(p.Inlines)) yield return run;
+        }
+    }
+
+    static IEnumerable<Run> AllRuns(InlineCollection inlines)
+    {
+        foreach (var inline in inlines.ToList())
+        {
+            if (inline is Run run) yield return run;
+            else if (inline is Span span)
+                foreach (var inner in AllRuns(span.Inlines)) yield return inner;
+        }
+    }
+
+    // --------------------------------------------------------------- zoom
+
+    static readonly double[] ZoomSteps = [0.5, 0.67, 0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0];
+
+    double zoom = 1;
+
+    /// <summary>Until the child picks a zoom, the page fits the window (never larger than actual size).</summary>
     void Desk_SizeChanged(object sender, SizeChangedEventArgs e)
     {
+        if (settings.Zoom > 0)
+        {
+            SetZoom(settings.Zoom, remember: false);
+            return;
+        }
         double needed = 28 + Page.Width + DeskContent.Margin.Left + DeskContent.Margin.Right;
         double available = e.NewSize.Width - SystemParameters.VerticalScrollBarWidth;
-        double scale = Math.Clamp(available / needed, 0.5, 1);
-        DeskContent.LayoutTransform = scale >= 1 ? Transform.Identity : new ScaleTransform(scale, scale);
+        double fit = available / needed;
+        SetZoom(ZoomSteps.LastOrDefault(z => z <= fit, ZoomSteps[0]) is var z && z > 1 ? 1 : z, remember: false);
+    }
+
+    void SetZoom(double value, bool remember)
+    {
+        zoom = Math.Clamp(value, ZoomSteps[0], ZoomSteps[^1]);
+        DeskContent.LayoutTransform = Math.Abs(zoom - 1) < 0.001 ? Transform.Identity : new ScaleTransform(zoom, zoom);
+        ZoomLabel.Text = $"{zoom * 100:0}%";
+        ZoomOutButton.IsEnabled = zoom > ZoomSteps[0] + 0.001;
+        ZoomInButton.IsEnabled = zoom < ZoomSteps[^1] - 0.001;
+        if (remember)
+        {
+            settings.Zoom = zoom;
+            settings.Save();
+        }
+    }
+
+    void StepZoom(int direction)
+    {
+        double next = direction > 0
+            ? ZoomSteps.FirstOrDefault(z => z > zoom + 0.001, ZoomSteps[^1])
+            : ZoomSteps.LastOrDefault(z => z < zoom - 0.001, ZoomSteps[0]);
+        SetZoom(next, remember: true);
+    }
+
+    void ZoomIn_Click(object sender, RoutedEventArgs e) => StepZoom(1);
+    void ZoomOut_Click(object sender, RoutedEventArgs e) => StepZoom(-1);
+
+    /// <summary>Ctrl + mouse wheel zooms the page.</summary>
+    void Desk_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        if (!System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Control)) return;
+        StepZoom(e.Delta > 0 ? 1 : -1);
+        e.Handled = true;
     }
 }

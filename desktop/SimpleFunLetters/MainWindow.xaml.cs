@@ -530,7 +530,7 @@ public partial class MainWindow : Window
         // child's latest letters for new typing; its existing text stays normal.
         designs = isFunLetter ? new Designs(NormalFont) : NewDesigns();
         if (isFunLetter)
-            designs.Restore(letter.Glyphs, letter.Fonts.Select(f => (f.Id, f.GlyphIds.AsEnumerable())));
+            designs.Restore(letter.Glyphs, letter.Fonts.Select(f => (f.Id, f.GlyphIds.AsEnumerable())), letter.CurrentFont);
         RefreshLetterTiles();
         CloseDrawing();
 

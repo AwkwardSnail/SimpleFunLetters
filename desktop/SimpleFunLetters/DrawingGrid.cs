@@ -12,7 +12,7 @@ namespace SimpleFunLetters;
 /// </summary>
 public sealed class DrawingGrid : FrameworkElement
 {
-    public const double Cell = 24;
+    public const double Cell = 20;
 
     static readonly Brush Paper = Freeze(new SolidColorBrush(Color.FromRgb(0xFD, 0xFD, 0xFB)));
     static readonly Brush Ink = Freeze(new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A)));

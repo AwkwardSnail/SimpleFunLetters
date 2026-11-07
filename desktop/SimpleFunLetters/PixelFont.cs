@@ -10,12 +10,28 @@ namespace SimpleFunLetters;
 /// </summary>
 public static class Grid
 {
-    public const int Columns = 12;
-    public const int Rows = 16;
-    public const int DescentRows = 4;
+    public const int Columns = 18;
+    public const int Rows = 24;
+    public const int DescentRows = 6;
     public const int AscentRows = Rows - DescentRows; // rows sitting on the line
 
     public static bool[,] Empty() => new bool[Rows, Columns];
+
+    /// <summary>
+    /// Fits a drawing made on a grid of another size (such as the 12 × 16 grid
+    /// of the first version) onto this one, square by square. Both grids put
+    /// the writing line three quarters of the way down, so letters stay on it.
+    /// </summary>
+    public static bool[,] Resample(bool[,] source)
+    {
+        int rows = source.GetLength(0), cols = source.GetLength(1);
+        if (rows == Rows && cols == Columns) return Copy(source);
+        var result = Empty();
+        for (int r = 0; r < Rows; r++)
+            for (int c = 0; c < Columns; c++)
+                result[r, c] = source[r * rows / Rows, c * cols / Columns];
+        return result;
+    }
 
     public static bool IsEmpty(bool[,] pixels)
     {
@@ -41,10 +57,10 @@ public static class Grid
 /// </summary>
 public static class PixelFont
 {
-    const int UnitsPerEm = 1024;
-    const int Pixel = 64;                 // 16 rows × 64 = one em
-    const int Ascender = 950;             // line spacing close to Atkinson Hyperlegible
-    const int Descender = 300;
+    const int Pixel = 50;                         // one square, in font units
+    const int UnitsPerEm = Grid.Rows * Pixel;     // the whole grid is one em (1200)
+    const int Ascender = UnitsPerEm * 950 / 1024; // line spacing close to Atkinson Hyperlegible
+    const int Descender = UnitsPerEm * 300 / 1024;
 
     sealed record GlyphData(char Char, byte[] Outline, int Advance, int XMin, int YMin, int XMax, int YMax, int Points, int Contours);
 
@@ -190,7 +206,7 @@ public static class PixelFont
     static byte[] Hmtx(List<GlyphData> data)
     {
         var s = new MemoryStream();
-        WriteU16(s, Pixel * 6); WriteI16(s, 0); // .notdef
+        WriteU16(s, Pixel * Grid.Columns / 2); WriteI16(s, 0); // .notdef
         foreach (var g in data) { WriteU16(s, g.Advance); WriteI16(s, g.XMin); }
         return s.ToArray();
     }
@@ -226,7 +242,7 @@ public static class PixelFont
         WriteI16(s, Ascender); WriteI16(s, -Descender); WriteI16(s, 0);         // typo metrics
         WriteU16(s, Ascender); WriteU16(s, Descender);                          // win metrics
         WriteU32(s, 1); WriteU32(s, 0);                                         // Latin 1 code page
-        WriteI16(s, Pixel * 8); WriteI16(s, Pixel * Grid.AscentRows);           // x-height, cap height
+        WriteI16(s, Pixel * Grid.Rows / 2); WriteI16(s, Pixel * Grid.AscentRows);   // x-height, cap height
         WriteU16(s, 0); WriteU16(s, 32); WriteU16(s, 1);
         return s.ToArray();
     }

@@ -39,10 +39,11 @@ public sealed class Designs
     public Designs(FontFamily normal)
     {
         this.normal = normal;
-        AddVersion(0, new Dictionary<char, Glyph>());
+        Current = AddVersion(0, new Dictionary<char, Glyph>());
     }
 
-    public FontVersion Current => versions[^1];
+    /// <summary>The version new typing uses.</summary>
+    public FontVersion Current { get; private set; }
     public IReadOnlyList<FontVersion> Versions => versions;
     public IReadOnlyList<Glyph> Glyphs => glyphs;
 
@@ -70,9 +71,37 @@ public sealed class Designs
             glyphs.Add(glyph);
             map[c] = glyph;
         }
-        AddVersion(versions.Max(v => v.Id) + 1, map);
+        Current = AddVersion(NextVersionId(), map);
         return true;
     }
+
+    /// <summary>
+    /// For "Apply to existing text": the version that looks like
+    /// <paramref name="old"/> except that character <paramref name="c"/> uses
+    /// its current drawing (or the normal letter, if it has none). Returns
+    /// <paramref name="old"/> itself when it already does.
+    /// </summary>
+    public FontVersion WithCurrentDrawingOf(FontVersion old, char c)
+    {
+        Current.Glyphs.TryGetValue(c, out var wanted);
+        old.Glyphs.TryGetValue(c, out var has);
+        if (wanted == has) return old;
+
+        var key = (old.Id, c, wanted?.Id ?? 0);
+        if (derived.TryGetValue(key, out var existing)) return existing;
+
+        var map = new Dictionary<char, Glyph>(old.Glyphs);
+        if (wanted is null) map.Remove(c); else map[c] = wanted;
+        // Reuse a version with exactly these drawings if there is one (often the current one).
+        var same = versions.FirstOrDefault(v => v.Glyphs.Count == map.Count && map.All(kv => v.Glyphs.TryGetValue(kv.Key, out var g) && g == kv.Value));
+        var version = same ?? AddVersion(NextVersionId(), map);
+        derived[key] = version;
+        return version;
+    }
+
+    readonly Dictionary<(int, char, int), FontVersion> derived = new();
+
+    int NextVersionId() => versions.Max(v => v.Id) + 1;
 
     /// <summary>Starts a new document's font from the child's saved letters.</summary>
     public void StartFrom(IReadOnlyDictionary<char, bool[,]> drawings)
@@ -81,11 +110,11 @@ public sealed class Designs
             if (AllCharacters.Contains(c) && !Grid.IsEmpty(pixels))
                 glyphs.Add(new Glyph(glyphs.Count + 1, c, Grid.Copy(pixels)));
         if (glyphs.Count > 0)
-            AddVersion(1, glyphs.ToDictionary(g => g.Char));
+            Current = AddVersion(1, glyphs.ToDictionary(g => g.Char));
     }
 
     /// <summary>Rebuilds the designs saved in a letter.</summary>
-    public void Restore(IEnumerable<Glyph> savedGlyphs, IEnumerable<(int Id, IEnumerable<int> GlyphIds)> savedVersions)
+    public void Restore(IEnumerable<Glyph> savedGlyphs, IEnumerable<(int Id, IEnumerable<int> GlyphIds)> savedVersions, int? currentId)
     {
         glyphs.AddRange(savedGlyphs);
         var byId = glyphs.ToDictionary(g => g.Id);
@@ -97,6 +126,8 @@ public sealed class Designs
                 if (byId.TryGetValue(gid, out var g)) map[g.Char] = g;
             AddVersion(id, map);
         }
+        // Older files don't say which version is current: it is the newest.
+        Current = currentId is int cid && versions.FirstOrDefault(v => v.Id == cid) is { } v2 ? v2 : versions.MaxBy(v => v.Id)!;
     }
 
     public FontVersion VersionOf(FontFamily family) =>
@@ -104,9 +135,11 @@ public sealed class Designs
 
     public FontVersion VersionById(int id) => versions.FirstOrDefault(v => v.Id == id) ?? versions[0];
 
-    void AddVersion(int id, Dictionary<char, Glyph> map)
+    FontVersion AddVersion(int id, Dictionary<char, Glyph> map)
     {
-        versions.Add(new FontVersion { Id = id, Glyphs = map, Family = MakeFamily(id, map) });
+        var version = new FontVersion { Id = id, Glyphs = map, Family = MakeFamily(id, map) };
+        versions.Add(version);
+        return version;
     }
 
     FontFamily MakeFamily(int id, IReadOnlyDictionary<char, Glyph> map)
@@ -127,22 +160,57 @@ public sealed class Designs
     static string AppFolder => System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SimpleFunLetters");
 
-    /// <summary>Where the fonts built while the app runs are kept.</summary>
-    public static string FontFolder => System.IO.Path.Combine(AppFolder, "fonts");
+    static string FontsRoot => System.IO.Path.Combine(AppFolder, "fonts");
 
-    /// <summary>Removes fonts left from earlier runs. Fonts still in use can't be deleted and are skipped.</summary>
+    /// <summary>
+    /// This copy of the app's own name: its process number and start time.
+    /// Two copies of the app open at once each keep their fonts apart.
+    /// </summary>
+    static readonly string SessionName = SessionNameOf(System.Diagnostics.Process.GetCurrentProcess());
+
+    static string SessionNameOf(System.Diagnostics.Process p) => $"{p.Id}-{p.StartTime.ToUniversalTime().Ticks}";
+
+    /// <summary>Where the fonts built while this copy of the app runs are kept.</summary>
+    public static string FontFolder => System.IO.Path.Combine(FontsRoot, SessionName);
+
+    /// <summary>
+    /// Removes fonts left by copies of the app that have closed. Fonts of a copy
+    /// that is still open are left alone (it may still be showing them).
+    /// </summary>
     public static void CleanUpOldFonts()
     {
         try
         {
-            if (!Directory.Exists(FontFolder)) return;
-            foreach (var file in Directory.GetFiles(FontFolder, "*.ttf"))
+            if (!Directory.Exists(FontsRoot)) return;
+            // Fonts from the first version sat loose in the folder.
+            foreach (var file in Directory.GetFiles(FontsRoot, "*.ttf"))
             {
                 try { File.Delete(file); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+            foreach (var folder in Directory.GetDirectories(FontsRoot))
+            {
+                if (StillRunning(System.IO.Path.GetFileName(folder))) continue;
+                try { Directory.Delete(folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
+    }
+
+    static bool StillRunning(string sessionName)
+    {
+        if (sessionName == SessionName) return true;
+        var dash = sessionName.IndexOf('-');
+        if (dash < 0 || !int.TryParse(sessionName[..dash], out int pid)) return false;
+        try
+        {
+            using var p = System.Diagnostics.Process.GetProcessById(pid);
+            return SessionNameOf(p) == sessionName; // same number, but is it the same copy?
+        }
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return false; // no such process any more
+        }
     }
 
     static string MyLettersPath => System.IO.Path.Combine(AppFolder, "my-letters.xml");
@@ -179,19 +247,28 @@ public static class GlyphXml
     public static XElement Write(Glyph g) => new("glyph",
         new XAttribute("id", g.Id),
         new XAttribute("char", g.Char.ToString()),
+        new XAttribute("columns", Grid.Columns),
+        new XAttribute("rows", Grid.Rows),
         Enumerable.Range(0, Grid.Rows).Select(r => new XElement("row",
             new string(Enumerable.Range(0, Grid.Columns).Select(c => g.Pixels[r, c] ? '#' : '.').ToArray()))));
 
+    /// <summary>Reads a drawing, scaling it to today's grid if it was drawn on another size.</summary>
     public static Glyph? Read(XElement e)
     {
         var ch = (string?)e.Attribute("char");
         if (string.IsNullOrEmpty(ch) || ch.Length != 1) return null;
 
-        var pixels = Grid.Empty();
         var rows = e.Elements("row").Select(r => r.Value.Trim()).ToList();
-        for (int r = 0; r < Math.Min(rows.Count, Grid.Rows); r++)
-            for (int c = 0; c < Math.Min(rows[r].Length, Grid.Columns); c++)
-                pixels[r, c] = rows[r][c] == '#';
-        return new Glyph((int?)e.Attribute("id") ?? 0, ch[0], pixels);
+        // Drawings saved before the grid size was recorded are 12 × 16.
+        int rowCount = (int?)e.Attribute("rows") ?? (rows.Count > 0 ? rows.Count : 16);
+        int colCount = (int?)e.Attribute("columns") ?? (rows.Count > 0 ? rows.Max(r => r.Length) : 12);
+        rowCount = Math.Clamp(rowCount, 1, 256);
+        colCount = Math.Clamp(colCount, 1, 256);
+
+        var source = new bool[rowCount, colCount];
+        for (int r = 0; r < Math.Min(rows.Count, rowCount); r++)
+            for (int c = 0; c < Math.Min(rows[r].Length, colCount); c++)
+                source[r, c] = rows[r][c] == '#';
+        return new Glyph((int?)e.Attribute("id") ?? 0, ch[0], Grid.Resample(source));
     }
 }

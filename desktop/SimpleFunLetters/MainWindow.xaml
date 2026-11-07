@@ -42,6 +42,16 @@
         <TextBlock x:Name="SizeLabel" Text="12 pt" MinWidth="56" TextAlignment="Center" VerticalAlignment="Center"/>
         <Button x:Name="LargerButton" Style="{StaticResource StepperButton}" Content="+"
                 Click="Larger_Click" ToolTip="Larger text from here on"/>
+
+        <Border Style="{StaticResource Separator}"/>
+
+        <TextBlock Text="Zoom" Foreground="{StaticResource GreenDimBrush}"
+                   VerticalAlignment="Center" Margin="0,0,10,0"/>
+        <Button x:Name="ZoomOutButton" Style="{StaticResource StepperButton}" Content="−"
+                Click="ZoomOut_Click" ToolTip="Make the page smaller on screen (Ctrl + mouse wheel)"/>
+        <TextBlock x:Name="ZoomLabel" Text="100%" MinWidth="56" TextAlignment="Center" VerticalAlignment="Center"/>
+        <Button x:Name="ZoomInButton" Style="{StaticResource StepperButton}" Content="+"
+                Click="ZoomIn_Click" ToolTip="Make the page bigger on screen (Ctrl + mouse wheel)"/>
       </WrapPanel>
     </Border>
 
@@ -76,7 +86,7 @@
             <StackPanel Margin="18,16,18,24" HorizontalAlignment="Center">
               <TextBlock x:Name="DrawTitle" Text="Draw your A" FontSize="20" Margin="0,0,0,4"/>
               <TextBlock Text="Click and drag on the squares. The right mouse button rubs out. Letters sit on the green line; tails like the one on g hang below it."
-                         Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Width="288" Margin="0,0,0,14"
+                         Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Width="360" Margin="0,0,0,14"
                          HorizontalAlignment="Left"/>
 
               <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" HorizontalAlignment="Left">
@@ -98,6 +108,9 @@
                 <Button Style="{StaticResource ToolButton}" Content="Cancel" Click="CancelDrawing_Click" Height="40"
                         ToolTip="Go back without changing this letter"/>
               </StackPanel>
+              <Button x:Name="ApplyToExistingButton" Style="{StaticResource ToolButton}" Height="40" Margin="0,10,0,0"
+                      HorizontalAlignment="Left" Click="ApplyToExisting_Click" Content="Apply to existing text"
+                      ToolTip="Like Done, and also changes this letter everywhere you've already written it"/>
             </StackPanel>
           </ScrollViewer>
         </Grid>
@@ -106,7 +119,7 @@
       <!-- Right: the desk with the A4 page. The arrows above and to the left of
            the page mark the margins: click one to show its line, drag it to move it. -->
       <ScrollViewer x:Name="Desk" Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                    Focusable="False" SizeChanged="Desk_SizeChanged">
+                    Focusable="False" SizeChanged="Desk_SizeChanged" PreviewMouseWheel="Desk_PreviewMouseWheel">
         <Grid x:Name="DeskContent" HorizontalAlignment="Center" Margin="12,20,40,48">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="28"/>
