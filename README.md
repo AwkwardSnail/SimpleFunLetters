@@ -13,7 +13,10 @@ stay the way you left them.
 ## Get it
 
 - **Windows:** coming soon to the Microsoft Store.
+- **In your browser:** the `web/` folder is the same app as a static site.
 - **Build it yourself (free):** see below.
+
+Both versions open and save the same `.funletter` files.
 
 ## Using it
 
@@ -90,6 +93,19 @@ The Windows app is .NET 10 WPF in `desktop/SimpleFunLetters`:
 ```
 dotnet run --project desktop/SimpleFunLetters
 ```
+
+The browser version is the self-contained `web/` folder (HTML, CSS, JavaScript
+modules and the bundled font, no build step), ready to host as a static site
+such as GitHub Pages. Serve it and open it:
+
+```
+python -m http.server 8175 --directory web
+```
+
+Then open http://localhost:8175. It builds the drawn fonts in the browser, just
+like the Windows app, and keeps your settings and latest letters in the
+browser's own storage. Save writes a `.funletter` file (in Chrome and Edge it
+can save straight back to the file you opened; other browsers download it).
 
 ## Privacy
 

@@ -1,0 +1,210 @@
+/* Atkinson Hyperlegible Next: SIL Open Font License 1.1 (see fonts/OFL.txt).
+   Bundled with the site so nothing is fetched from anywhere else. */
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('fonts/AtkinsonHyperlegibleNext-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('fonts/AtkinsonHyperlegibleNext-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+}
+
+:root {
+  --bg: #0d0f0c;
+  --bar: #121510;
+  --line: #24301f;
+  --green: #7fdc8a;
+  --green-dim: #4f8a56;
+  --paper: #fdfdfb;
+  --ink: #1a1a1a;
+  --guide: #3c8c48;
+  --font: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --tile-w: 48px;
+  --tile-h: 57px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--green);
+  font-family: var(--font);
+  font-size: 15px;
+}
+
+button {
+  font: inherit;
+  color: var(--green);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--green-dim); }
+button:disabled { opacity: 0.35; cursor: default; border-color: var(--line); }
+button:focus-visible { outline: 2px solid var(--green-dim); outline-offset: 2px; }
+
+/* ---------------- Toolbar ---------------- */
+.bar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 0;
+  padding: 8px 16px;
+  background: var(--bar);
+  border-bottom: 1px solid var(--line);
+}
+.wordmark { font-family: Consolas, 'Cascadia Mono', ui-monospace, monospace; font-size: 20px; margin-right: 24px; }
+.group { display: inline-flex; align-items: center; gap: 6px; padding-right: 16px; margin-right: 10px; border-right: 1px solid var(--line); }
+.group:last-child { border-right: 0; }
+.dim { color: var(--green-dim); margin-right: 4px; }
+.value { min-width: 56px; text-align: center; }
+.stepper { padding: 0; font-size: 17px; }
+
+/* ---------------- Layout ---------------- */
+.main { flex: 1; display: flex; min-height: 0; }
+
+.panel {
+  flex: none;
+  width: 420px;
+  overflow-y: auto;
+  padding: 16px 18px 24px;
+  background: var(--bar);
+  border-right: 1px solid var(--line);
+}
+.panel h2 { margin: 0 0 4px; font-size: 20px; font-weight: 400; }
+.panel h3 { margin: 0 0 6px; font-size: 15px; font-weight: 400; color: var(--green-dim); }
+.hint { margin: 0 0 14px; color: var(--green-dim); }
+
+.tiles { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
+.tile {
+  width: var(--tile-w);
+  height: var(--tile-h);
+  padding: 4px;
+  font-size: 24px;
+  color: var(--green-dim);
+  display: grid;
+  place-items: center;
+}
+.tile canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+
+#drawView .hint { width: 360px; }
+#drawing {
+  display: block;
+  width: 360px;
+  height: 480px;
+  border: 1px solid var(--line);
+  cursor: crosshair;
+  touch-action: none;
+}
+.row { display: flex; gap: 6px; margin-top: 14px; }
+.row.spaced { margin-top: 20px; }
+.tool[aria-pressed="true"] { border: 2px solid var(--green); }
+.tall { height: 40px; }
+.done {
+  height: 40px;
+  padding: 0 28px;
+  margin-right: 4px;
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--bg);
+  font-weight: 600;
+  font-size: 16px;
+}
+.done:hover { border-color: var(--green); }
+
+/* ---------------- The desk and page ---------------- */
+.desk { flex: 1; overflow: auto; min-width: 0; }
+
+.desk-content {
+  display: grid;
+  grid-template-columns: 28px auto;
+  grid-template-rows: 28px auto auto;
+  width: max-content;
+  margin: 20px auto 48px;
+  padding: 0 40px 0 12px;
+}
+.ruler-top { grid-column: 2; grid-row: 1; position: relative; }
+.ruler-side { grid-column: 1; grid-row: 2; position: relative; }
+
+.page {
+  grid-column: 2;
+  grid-row: 2;
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  background: var(--paper);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.editor {
+  position: absolute;
+  top: var(--m-top, 25mm);
+  bottom: var(--m-bottom, 25mm);
+  left: var(--m-left, 25mm);
+  right: var(--m-right, 25mm);
+  overflow: hidden;
+  outline: none;
+  color: var(--ink);
+  caret-color: var(--ink);
+  font-family: 'Atkinson Hyperlegible Next', sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  tab-size: 4;
+}
+.editor p { margin: 0; }
+
+.guides { position: absolute; inset: 0; pointer-events: none; }
+.guide { position: absolute; background: var(--guide); }
+.guide.v { top: 0; bottom: 0; width: 1px; }
+.guide.h { left: 0; right: 0; height: 1px; }
+.value-label {
+  position: absolute;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bar);
+  color: var(--green);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* The margin arrows. Outline: line hidden. Filled: line showing. */
+.handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--green);
+}
+.handle svg { display: block; width: 20px; height: 20px; }
+.handle path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+.handle.on path { fill: currentColor; }
+.handle:focus-visible { outline: 1px dashed var(--green-dim); outline-offset: 0; }
+.ruler-top .handle { top: 8px; cursor: ew-resize; }
+.ruler-side .handle { left: 8px; cursor: ns-resize; }
+
+.note { grid-column: 2; grid-row: 3; margin: 14px 0 0; text-align: center; color: var(--green-dim); }
+
+/* ---------------- Printing: just the page ---------------- */
+@media print {
+  body { display: block; background: none; height: auto; }
+  .bar, .panel, .ruler-top, .ruler-side, .guides, .note { display: none !important; }
+  .main, .desk { display: block; overflow: visible; }
+  .desk-content { display: block; margin: 0; padding: 0; zoom: 1 !important; }
+  .page { width: auto; height: auto; box-shadow: none; overflow: visible; background: none; }
+  /* The margins come from @page (set by the app), so every printed page has them. */
+  .editor { position: static; overflow: visible; }
+}

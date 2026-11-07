@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "simplefunletters-web",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8175", "--directory", "C:/Users/felip/OneDrive/Documents/SoftwareProjects/SimpleFunLetters/web"],
+      "port": 8175
+    }
+  ]
+}
