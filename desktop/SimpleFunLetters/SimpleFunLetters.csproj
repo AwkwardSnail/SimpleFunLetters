@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SimpleFunLetters</RootNamespace>
+    <AssemblyName>SimpleFunLetters</AssemblyName>
+    <Product>SimpleFunLetters</Product>
+    <Version>1.0.0</Version>
+    <!-- The app is English only; leave out .NET's translated messages so the
+         Store doesn't list languages SimpleFunLetters doesn't support. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Atkinson Hyperlegible Next, SIL OFL 1.1 (Fonts\OFL.txt). Built into the
+         app so it works offline and doesn't need to be installed. -->
+    <Resource Include="Fonts\*.ttf" />
+    <None Include="Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,164 @@
+<Window x:Class="SimpleFunLetters.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SimpleFunLetters"
+        Title="SimpleFunLetters" Width="1360" Height="940" MinWidth="900" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgBrush}" Foreground="{StaticResource GreenBrush}"
+        FontFamily="{StaticResource PageFont}" FontSize="15"
+        UseLayoutRounding="True">
+
+  <Window.CommandBindings>
+    <CommandBinding Command="Open" Executed="Open_Executed"/>
+    <CommandBinding Command="Save" Executed="Save_Executed"/>
+    <CommandBinding Command="Print" Executed="Print_Executed"/>
+  </Window.CommandBindings>
+
+  <DockPanel>
+    <!-- Toolbar -->
+    <Border DockPanel.Dock="Top" Background="{StaticResource BarBrush}"
+            BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="16,8">
+      <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock Text="SimpleFunLetters" FontFamily="Consolas" FontSize="20"
+                   VerticalAlignment="Center" Margin="0,0,24,0"/>
+
+        <Button Style="{StaticResource ToolButton}" Command="Open" Content="Open" ToolTip="Open a letter (Ctrl+O)"/>
+        <Button Style="{StaticResource ToolButton}" Command="Save" Content="Save" ToolTip="Save (Ctrl+S)"/>
+        <Button Style="{StaticResource ToolButton}" Command="Print" Content="Print" ToolTip="Print on A4 (Ctrl+P)"/>
+
+        <Border Style="{StaticResource Separator}"/>
+
+        <Button Style="{StaticResource ToolButton}" Command="Undo" CommandTarget="{Binding ElementName=Editor}"
+                Content="Undo" ToolTip="Undo (Ctrl+Z)"/>
+        <Button Style="{StaticResource ToolButton}" Command="Redo" CommandTarget="{Binding ElementName=Editor}"
+                Content="Redo" ToolTip="Redo (Ctrl+Y)"/>
+
+        <Border Style="{StaticResource Separator}"/>
+
+        <TextBlock Text="Text size" Foreground="{StaticResource GreenDimBrush}"
+                   VerticalAlignment="Center" Margin="0,0,10,0"/>
+        <Button x:Name="SmallerButton" Style="{StaticResource StepperButton}" Content="−"
+                Click="Smaller_Click" ToolTip="Smaller text from here on"/>
+        <TextBlock x:Name="SizeLabel" Text="12 pt" MinWidth="56" TextAlignment="Center" VerticalAlignment="Center"/>
+        <Button x:Name="LargerButton" Style="{StaticResource StepperButton}" Content="+"
+                Click="Larger_Click" ToolTip="Larger text from here on"/>
+      </WrapPanel>
+    </Border>
+
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="420"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- Left: the letters, or the drawing pane for one letter -->
+      <Border Grid.Column="0" Background="{StaticResource BarBrush}"
+              BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
+        <Grid>
+          <ScrollViewer x:Name="LettersView" VerticalScrollBarVisibility="Auto" Focusable="False">
+            <StackPanel Margin="18,16,18,24">
+              <TextBlock Text="Your letters" FontSize="20" Margin="0,0,0,4"/>
+              <TextBlock Text="Click a letter to draw your own. Anything you type after that uses your drawing."
+                         Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+              <TextBlock Text="Capital letters" Style="{StaticResource SectionLabel}"/>
+              <WrapPanel x:Name="CapitalsPanel" Margin="0,0,0,14"/>
+              <TextBlock Text="Small letters" Style="{StaticResource SectionLabel}"/>
+              <WrapPanel x:Name="SmallsPanel" Margin="0,0,0,14"/>
+              <TextBlock Text="Punctuation" Style="{StaticResource SectionLabel}"/>
+              <WrapPanel x:Name="PunctuationPanel" Margin="0,0,0,14"/>
+              <TextBlock Text="Numbers" Style="{StaticResource SectionLabel}"/>
+              <WrapPanel x:Name="NumbersPanel"/>
+            </StackPanel>
+          </ScrollViewer>
+
+          <ScrollViewer x:Name="DrawView" VerticalScrollBarVisibility="Auto" Focusable="False" Visibility="Collapsed">
+            <StackPanel Margin="18,16,18,24" HorizontalAlignment="Center">
+              <TextBlock x:Name="DrawTitle" Text="Draw your A" FontSize="20" Margin="0,0,0,4"/>
+              <TextBlock Text="Click and drag on the squares. The right mouse button rubs out. Letters sit on the green line; tails like the one on g hang below it."
+                         Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Width="288" Margin="0,0,0,14"
+                         HorizontalAlignment="Left"/>
+
+              <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" HorizontalAlignment="Left">
+                <local:DrawingGrid x:Name="Drawing"/>
+              </Border>
+
+              <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                <RadioButton x:Name="PenTool" Style="{StaticResource ToolRadio}" Content="Pen" IsChecked="True"
+                             GroupName="Tool" Checked="Tool_Checked"/>
+                <RadioButton x:Name="EraserTool" Style="{StaticResource ToolRadio}" Content="Eraser"
+                             GroupName="Tool" Checked="Tool_Checked"/>
+                <Button Style="{StaticResource ToolButton}" Content="Clear" Click="ClearDrawing_Click"
+                        ToolTip="Rub out the whole drawing. Done with nothing drawn goes back to the normal letter."/>
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                <Button Style="{StaticResource DoneButton}" Content="Done" Click="DoneDrawing_Click"
+                        ToolTip="Use this drawing for everything you type from now on"/>
+                <Button Style="{StaticResource ToolButton}" Content="Cancel" Click="CancelDrawing_Click" Height="40"
+                        ToolTip="Go back without changing this letter"/>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+
+      <!-- Right: the desk with the A4 page. The arrows above and to the left of
+           the page mark the margins: click one to show its line, drag it to move it. -->
+      <ScrollViewer x:Name="Desk" Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                    Focusable="False" SizeChanged="Desk_SizeChanged">
+        <Grid x:Name="DeskContent" HorizontalAlignment="Center" Margin="12,20,40,48">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="28"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="28"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+          </Grid.RowDefinitions>
+
+          <Canvas x:Name="TopRuler" Grid.Row="0" Grid.Column="1"/>
+          <Canvas x:Name="SideRuler" Grid.Row="1" Grid.Column="0"/>
+
+          <!-- Shadow sits behind the page so the effect doesn't soften the text. -->
+          <Border x:Name="PageShadow" Grid.Row="1" Grid.Column="1" Background="{StaticResource PaperBrush}">
+            <Border.Effect>
+              <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.6" Color="Black"/>
+            </Border.Effect>
+          </Border>
+
+          <Grid x:Name="Page" Grid.Row="1" Grid.Column="1" Background="{StaticResource PaperBrush}" ClipToBounds="True">
+            <!-- Rich text only so each piece of text keeps its own size and
+                 letter drawings; bold, italic and the like are switched off in code. -->
+            <RichTextBox x:Name="Editor"
+                         AcceptsReturn="True" AcceptsTab="True"
+                         VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled"
+                         BorderThickness="0" Padding="0" Background="Transparent"
+                         Foreground="{StaticResource InkBrush}" CaretBrush="{StaticResource InkBrush}"
+                         FontFamily="{StaticResource PageFont}"
+                         FocusVisualStyle="{x:Null}" SpellCheck.IsEnabled="True"
+                         TextChanged="Editor_TextChanged"
+                         SelectionChanged="Editor_SelectionChanged"
+                         PreviewTextInput="Editor_PreviewTextInput"
+                         PreviewKeyDown="Editor_PreviewKeyDown"
+                         PreviewMouseLeftButtonDown="Editor_PreviewMouseLeftButtonDown"
+                         DataObject.Pasting="Editor_Pasting"
+                         PreviewMouseWheel="Editor_PreviewMouseWheel">
+              <RichTextBox.Resources>
+                <Style TargetType="Paragraph">
+                  <Setter Property="Margin" Value="0"/>
+                </Style>
+              </RichTextBox.Resources>
+            </RichTextBox>
+            <Canvas x:Name="Guides" IsHitTestVisible="False"/>
+          </Grid>
+
+          <TextBlock x:Name="OverflowNote" Grid.Row="2" Grid.Column="1" Visibility="Collapsed"
+                     Text="The text runs past the bottom of the page."
+                     Foreground="{StaticResource GreenDimBrush}" HorizontalAlignment="Center" Margin="0,14,0,0"/>
+        </Grid>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</Window>

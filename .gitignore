@@ -1,0 +1,7 @@
+# .NET build output
+bin/
+obj/
+# MSIX packages
+desktop/dist/
+# Per-user Claude Code settings
+.claude/settings.local.json
