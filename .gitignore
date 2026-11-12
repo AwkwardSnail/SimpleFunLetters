@@ -5,3 +5,5 @@ obj/
 desktop/dist/
 # Per-user Claude Code settings
 .claude/settings.local.json
+# MSIX build output (packaging\pack.ps1)
+packaging/out/

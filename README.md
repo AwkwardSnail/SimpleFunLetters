@@ -1,4 +1,4 @@
-# SimpleFunLetters
+# SimpleLetters Fun
 
 Write letters in your own handwriting. A calm letter writer for children (8 and
 up): draw your own version of any letter, punctuation mark or number on squared
@@ -74,12 +74,12 @@ typing uses), and the text with its sizes and the font version of each piece.
 ```
 
 A `run` without a `font` uses the normal letters. Drawings made on the first
-version's 12 × 16 grid are scaled up to fit when they're opened. SimpleFunLetters can also
+version's 12 × 16 grid are scaled up to fit when they're opened. SimpleLetters Fun can also
 open SimpleLetters' `.sletter` files and plain `.txt` files.
 
 ## How it works
 
-Each time you press Done, SimpleFunLetters builds a small TrueType font from
+Each time you press Done, SimpleLetters Fun builds a small TrueType font from
 your drawings (each square becomes a square in the font) and keeps the earlier
 ones, so old text keeps its look. The fonts are made on your computer, kept in
 `%LOCALAPPDATA%\SimpleFunLetters\fonts` while the app runs (a folder per open
@@ -93,6 +93,12 @@ The Windows app is .NET 10 WPF in `desktop/SimpleFunLetters`:
 ```
 dotnet run --project desktop/SimpleFunLetters
 ```
+
+`packaging\pack.ps1` builds the MSIX package for the Microsoft Store (in
+`packaging\out\`). With Windows Developer Mode on, `packaging\pack.ps1 -Install`
+also installs it on this PC for testing, so it shows in the Start menu and
+opens `.funletter` files, like the Store version. `packaging\generate-icons.ps1`
+makes the icons from `packaging\icon-master.png`.
 
 The browser version is the self-contained `web/` folder (HTML, CSS, JavaScript
 modules and the bundled font, no build step), ready to host as a static site
@@ -109,7 +115,7 @@ can save straight back to the file you opened; other browsers download it).
 
 ## Privacy
 
-SimpleFunLetters collects no data and never contacts an Awkward Snail server.
+SimpleLetters Fun collects no data and never contacts an Awkward Snail server.
 Your letters and drawings stay on your device. See the
 [privacy policy](https://awkwardsnail.com.au/privacy.html).
 

@@ -119,7 +119,7 @@ export function fromXml(text) {
   const doc = new DOMParser().parseFromString(text, 'application/xml');
   const root = doc.documentElement;
   if (doc.getElementsByTagName('parsererror').length || !root || (root.nodeName !== 'funletter' && root.nodeName !== 'sletter'))
-    throw new Error("This isn't a SimpleFunLetters or SimpleLetters document.");
+    throw new Error("This isn't a SimpleLetters Fun or SimpleLetters document.");
   const child = (el, name) => [...el.children].filter((c) => c.nodeName === name);
 
   const letter = emptyLetter(12);

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX manifest for SimpleLetters Fun.
+  Identity Name, Identity Publisher and PublisherDisplayName must match Partner Center
+  (Product management > Product identity) exactly, including the "Akward" spelling of
+  the package name prefix. The name is the code Partner Center gave the product
+  "SimpleLetters Fun", not a readable one.
+  Checked against Partner Center on 2026-11-12
+  (Store ID 9N6SR02K0G0W, PFN AkwardSnail.64090DED9158F_ktfm57pxn63ft).
+  pack.ps1 sets Identity Version from its -Version parameter.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="AkwardSnail.64090DED9158F"
+    Publisher="CN=A55585C2-FE40-4ED1-9B77-46466AE9C532"
+    Version="1.0.0.0"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <!-- Must be a name reserved for this product in Partner Center. -->
+    <DisplayName>SimpleLetters Fun</DisplayName>
+    <PublisherDisplayName>aWkward Snail</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="SimpleFunLetters" Executable="SimpleFunLetters.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="SimpleLetters Fun"
+        Description="Write letters in your own drawn letters."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#0D0F0C" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Double-clicking a .funletter file opens it in SimpleLetters Fun.
+             .sletter files stay with SimpleLetters; this app opens them from Open. -->
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="funletter">
+            <uap:DisplayName>SimpleLetters Fun letter</uap:DisplayName>
+            <uap:Logo>Assets\StoreLogo.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.funletter</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Needed by every classic desktop (WPF) app in an MSIX package. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

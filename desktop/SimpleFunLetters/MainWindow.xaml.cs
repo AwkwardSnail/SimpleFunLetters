@@ -24,8 +24,8 @@ public partial class MainWindow : Window
     const double MinFontPt = 6;
     const double MaxFontPt = 72;
 
-    const string OpenFilter = "Letters (*.funletter;*.sletter;*.txt)|*.funletter;*.sletter;*.txt|SimpleFunLetters letters (*.funletter)|*.funletter|SimpleLetters letters (*.sletter)|*.sletter|Text files (*.txt)|*.txt";
-    const string SaveFilter = "SimpleFunLetters letter (*.funletter)|*.funletter";
+    const string OpenFilter = "Letters (*.funletter;*.sletter;*.txt)|*.funletter;*.sletter;*.txt|SimpleLetters Fun letters (*.funletter)|*.funletter|SimpleLetters letters (*.sletter)|*.sletter|Text files (*.txt)|*.txt";
+    const string SaveFilter = "SimpleLetters Fun letter (*.funletter)|*.funletter";
 
     static double Dip(double mm) => mm * 96.0 / 25.4;
     static double Mm(double dip) => dip * 25.4 / 96.0;
@@ -35,7 +35,7 @@ public partial class MainWindow : Window
     static readonly Brush GuideBrush = Frozen(new SolidColorBrush(Color.FromRgb(0x3C, 0x8C, 0x48)));
 
     // Ctrl shortcuts the page accepts. Everything else (Ctrl+B, Ctrl+I, Ctrl+E,
-    // Ctrl+] and so on) would add formatting SimpleFunLetters doesn't offer.
+    // Ctrl+] and so on) would add formatting SimpleLetters Fun doesn't offer.
     static readonly HashSet<Key> AllowedCtrlKeys =
     [
         Key.A, Key.C, Key.V, Key.X, Key.Z, Key.Y, Key.O, Key.S, Key.P,
@@ -463,7 +463,7 @@ public partial class MainWindow : Window
 
     string DocumentName => filePath is null ? "Untitled" : System.IO.Path.GetFileNameWithoutExtension(filePath);
 
-    void UpdateTitle() => Title = $"{(dirty ? "*" : "")}{DocumentName} – SimpleFunLetters";
+    void UpdateTitle() => Title = $"{(dirty ? "*" : "")}{DocumentName} – SimpleLetters Fun";
 
     Letter CurrentLetter()
     {
@@ -512,7 +512,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or XmlException or FormatException)
         {
-            MessageBox.Show(this, $"SimpleFunLetters couldn't open that file.\n\n{ex.Message}", "SimpleFunLetters",
+            MessageBox.Show(this, $"SimpleLetters Fun couldn't open that file.\n\n{ex.Message}", "SimpleLetters Fun",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -563,7 +563,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            MessageBox.Show(this, $"SimpleFunLetters couldn't save the file.\n\n{ex.Message}", "SimpleFunLetters",
+            MessageBox.Show(this, $"SimpleLetters Fun couldn't save the file.\n\n{ex.Message}", "SimpleLetters Fun",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
@@ -578,7 +578,7 @@ public partial class MainWindow : Window
     bool ConfirmDiscard()
     {
         if (!dirty) return true;
-        var answer = MessageBox.Show(this, $"Save changes to {DocumentName}?", "SimpleFunLetters",
+        var answer = MessageBox.Show(this, $"Save changes to {DocumentName}?", "SimpleLetters Fun",
             MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         return answer switch
         {
@@ -617,7 +617,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is PrintQueueException or PrintSystemException or InvalidOperationException)
         {
-            MessageBox.Show(this, $"SimpleFunLetters couldn't print.\n\n{ex.Message}", "SimpleFunLetters",
+            MessageBox.Show(this, $"SimpleLetters Fun couldn't print.\n\n{ex.Message}", "SimpleLetters Fun",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }

@@ -1,4 +1,4 @@
-// SimpleFunLetters in the browser. The same app as the Windows version:
+// SimpleLetters Fun in the browser. The same app as the Windows version:
 // draw your own letters on the left, write on an A4 page on the right.
 // Everything stays in this browser: settings and the child's latest letters
 // are kept in local storage; letters are saved as .funletter files.
@@ -58,7 +58,7 @@ const editor = new PageEditor($('editor'), {
 });
 
 function markDirty() { if (!dirty) { dirty = true; updateTitle(); } }
-function updateTitle() { document.title = `${dirty ? '*' : ''}${fileName} – SimpleFunLetters`; }
+function updateTitle() { document.title = `${dirty ? '*' : ''}${fileName} – SimpleLetters Fun`; }
 function updateUndoButtons() { $('undoButton').disabled = !editor.canUndo; $('redoButton').disabled = !editor.canRedo; }
 function checkOverflow() {
   requestAnimationFrame(() => {
@@ -475,7 +475,7 @@ async function openFile(file, handle) {
     const text = await file.text();
     letter = ext === EXTENSION || ext === '.sletter' ? fromXml(text) : fromPlainText(text, currentSize);
   } catch (err) {
-    window.alert(`SimpleFunLetters couldn't open that file.\n\n${err.message}`);
+    window.alert(`SimpleLetters Fun couldn't open that file.\n\n${err.message}`);
     return;
   }
   const isFunLetter = ext === EXTENSION;
@@ -496,7 +496,7 @@ async function openLetter() {
     try {
       const [handle] = await window.showOpenFilePicker({ types: pickerTypes });
       await openFile(await handle.getFile(), handle);
-    } catch (err) { if (err.name !== 'AbortError') window.alert(`SimpleFunLetters couldn't open that file.\n\n${err.message}`); }
+    } catch (err) { if (err.name !== 'AbortError') window.alert(`SimpleLetters Fun couldn't open that file.\n\n${err.message}`); }
     return;
   }
   $('fileInput').value = '';
@@ -510,7 +510,7 @@ async function saveLetter() {
     if (!fileHandle && window.showSaveFilePicker) {
       fileHandle = await window.showSaveFilePicker({
         suggestedName: fileName + EXTENSION,
-        types: [{ description: 'SimpleFunLetters letter', accept: { 'application/xml': [EXTENSION] } }],
+        types: [{ description: 'SimpleLetters Fun letter', accept: { 'application/xml': [EXTENSION] } }],
       });
       fileName = fileHandle.name.replace(/\.[^.]+$/, '');
     }
@@ -531,7 +531,7 @@ async function saveLetter() {
     dirty = false;
     updateTitle();
   } catch (err) {
-    if (err.name !== 'AbortError') window.alert(`SimpleFunLetters couldn't save the file.\n\n${err.message}`);
+    if (err.name !== 'AbortError') window.alert(`SimpleLetters Fun couldn't save the file.\n\n${err.message}`);
   }
   editor.focus();
 }

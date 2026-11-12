@@ -22,7 +22,7 @@ public sealed class LetterParagraph
 }
 
 /// <summary>
-/// A SimpleFunLetters document, saved as XML with the .funletter extension:
+/// A SimpleLetters Fun document, saved as XML with the .funletter extension:
 /// the page margins, every letter drawing, every version of the child's font,
 /// and the text with its sizes and font versions.
 /// <code>
@@ -214,7 +214,7 @@ public sealed class Letter
         var xml = XDocument.Load(path, LoadOptions.PreserveWhitespace);
         var root = xml.Root;
         if (root is null || (root.Name != "funletter" && root.Name != "sletter"))
-            throw new FormatException("This isn't a SimpleFunLetters or SimpleLetters document.");
+            throw new FormatException("This isn't a SimpleLetters Fun or SimpleLetters document.");
 
         var letter = new Letter();
         if (root.Element("page") is { } page)
