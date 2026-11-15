@@ -47,6 +47,12 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <Style x:Key="BigToolButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
+      <Setter Property="Height" Value="44"/>
+      <Setter Property="Padding" Value="8,0"/>
+      <Setter Property="Margin" Value="3"/>
+      <Setter Property="FontSize" Value="15"/>
+    </Style>
 
     <Style x:Key="StepperButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
       <Setter Property="Padding" Value="0"/>
@@ -71,6 +77,18 @@
     </Style>
 
     <!-- Pen / Eraser: a pair where one is always chosen. -->
+    <!-- Small line-drawn icons beside the drawing tools' names, in the button's own colour. -->
+    <Style x:Key="ToolIcon" TargetType="Path">
+      <Setter Property="Width" Value="20"/>
+      <Setter Property="Height" Value="20"/>
+      <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Control}}"/>
+      <Setter Property="StrokeThickness" Value="1.6"/>
+      <Setter Property="StrokeLineJoin" Value="Round"/>
+      <Setter Property="StrokeStartLineCap" Value="Round"/>
+      <Setter Property="StrokeEndLineCap" Value="Round"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0,0,8,0"/>
+    </Style>
     <Style x:Key="ToolRadio" TargetType="RadioButton">
       <Setter Property="Height" Value="34"/>
       <Setter Property="Padding" Value="14,0"/>
@@ -100,6 +118,13 @@
           </ControlTemplate>
         </Setter.Value>
       </Setter>
+    </Style>
+    <!-- The bigger buttons under the drawing: icon and name, sharing the row evenly. -->
+    <Style x:Key="BigToolRadio" TargetType="RadioButton" BasedOn="{StaticResource ToolRadio}">
+      <Setter Property="Height" Value="44"/>
+      <Setter Property="Padding" Value="8,0"/>
+      <Setter Property="Margin" Value="3"/>
+      <Setter Property="FontSize" Value="15"/>
     </Style>
 
     <Style x:Key="DoneButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">

@@ -118,36 +118,81 @@
                 <local:DrawingGrid x:Name="Drawing"/>
               </Border>
 
-              <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                <RadioButton x:Name="PenTool" Style="{StaticResource ToolRadio}" Content="Pen" IsChecked="True"
-                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw by clicking and dragging"/>
-                <RadioButton x:Name="EraserTool" Style="{StaticResource ToolRadio}" Content="Eraser"
-                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Rub out by clicking and dragging"/>
-                <RadioButton x:Name="LineTool" Style="{StaticResource ToolRadio}" Content="Line"
-                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw a straight line"/>
-                <RadioButton x:Name="ArcTool" Style="{StaticResource ToolRadio}" Content="Arc"
-                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw part of a circle, or all of it"/>
-              </StackPanel>
-
-              <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                <Button x:Name="UndoDrawingButton" Style="{StaticResource ToolButton}" Content="Undo" IsEnabled="False"
-                        Click="UndoDrawing_Click" ToolTip="Take back the last stroke, line, arc, Clear or change of squares (Ctrl+Z)"/>
-                <Button Style="{StaticResource ToolButton}" Content="Clear" Click="ClearDrawing_Click"
-                        ToolTip="Rub out the whole drawing. Done with nothing drawn goes back to the normal letter."/>
-              </StackPanel>
+              <!-- The drawing tools, Undo and Clear: two rows of three, each with its icon. -->
+              <UniformGrid Columns="3" Width="366" Margin="-3,8,0,0" HorizontalAlignment="Left">
+                <RadioButton x:Name="PenTool" Style="{StaticResource BigToolRadio}" IsChecked="True"
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw by clicking and dragging">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M3,17 L4,13 L13,4 L16,7 L7,16 Z M11,6 L14,9"/>
+                    <TextBlock Text="Pen" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton x:Name="EraserTool" Style="{StaticResource BigToolRadio}"
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Rub out by clicking and dragging">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M2,12 L9,5 L16,12 L10,18 L8,18 Z M5.5,8.5 L12.5,15.5 M10,18 L18,18"/>
+                    <TextBlock Text="Eraser" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton x:Name="LineTool" Style="{StaticResource BigToolRadio}"
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw a straight line">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M4,16 L16,4 M2.5,14.5 H5.5 V17.5 H2.5 Z M14.5,2.5 H17.5 V5.5 H14.5 Z"/>
+                    <TextBlock Text="Line" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton x:Name="ArcTool" Style="{StaticResource BigToolRadio}"
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw part of a circle, or all of it">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M3,15 A12,12 0 0 1 15,3 M1.5,15 H4.5 M3,13.5 V16.5 M13.5,3 H16.5 M15,1.5 V4.5 M14,14 L15,15 M15,14 L14,15"/>
+                    <TextBlock Text="Arc" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </RadioButton>
+                <Button x:Name="UndoDrawingButton" Style="{StaticResource BigToolButton}" IsEnabled="False"
+                        Click="UndoDrawing_Click" ToolTip="Take back the last stroke, line, arc, Clear or change of squares (Ctrl+Z)">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M7,4 L3,8 L7,12 M3,8 H12 A4.5,4.5 0 0 1 12,17 H7"/>
+                    <TextBlock Text="Undo" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+                <Button Style="{StaticResource BigToolButton}" Click="ClearDrawing_Click"
+                        ToolTip="Rub out the whole drawing. Done with nothing drawn goes back to the normal letter.">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M3,3 H17 V17 H3 Z M7,7 L13,13 M13,7 L7,13"/>
+                    <TextBlock Text="Clear" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+              </UniformGrid>
 
               <!-- The size of the squares. Changing it fits the drawing onto the new squares. -->
-              <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                <TextBlock Text="Squares" Foreground="{StaticResource GreenDimBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <RadioButton x:Name="LargeSquares" Style="{StaticResource ToolRadio}" Content="Large" Tag="24"
-                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Big squares: quick, blocky letters (18 × 24)"/>
-                <RadioButton x:Name="MediumSquares" Style="{StaticResource ToolRadio}" Content="Medium" Tag="40"
-                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Medium squares for more detail (30 × 40)"/>
-                <RadioButton x:Name="SmallSquares" Style="{StaticResource ToolRadio}" Content="Small" Tag="60"
-                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Small squares for the finest detail (45 × 60)"/>
-              </StackPanel>
+              <DockPanel Width="363" Margin="0,5,0,0" HorizontalAlignment="Left">
+                <TextBlock Text="Squares" Foreground="{StaticResource GreenDimBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <UniformGrid Columns="3">
+                <RadioButton x:Name="LargeSquares" Style="{StaticResource BigToolRadio}" Padding="2,0" Tag="24"
+                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Big squares: quick, blocky letters (18 × 24)">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M3,3 H17 V17 H3 Z M10,3 V17 M3,10 H17"/>
+                    <TextBlock Text="Large" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton x:Name="MediumSquares" Style="{StaticResource BigToolRadio}" Padding="2,0" Tag="40"
+                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Medium squares for more detail (30 × 40)">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M3,3 H17 V17 H3 Z M7.67,3 V17 M12.33,3 V17 M3,7.67 H17 M3,12.33 H17"/>
+                    <TextBlock Text="Medium" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton x:Name="SmallSquares" Style="{StaticResource BigToolRadio}" Padding="2,0" Tag="60"
+                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Small squares for the finest detail (45 × 60)">
+                  <StackPanel Orientation="Horizontal">
+                    <Path Style="{StaticResource ToolIcon}" Data="M3,3 H17 V17 H3 Z M6.5,3 V17 M10,3 V17 M13.5,3 V17 M3,6.5 H17 M3,10 H17 M3,13.5 H17"/>
+                    <TextBlock Text="Small" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </RadioButton>
+                </UniformGrid>
+              </DockPanel>
 
-              <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+              <StackPanel Orientation="Horizontal" Margin="0,11,0,0">
                 <Button Style="{StaticResource DoneButton}" Content="Done" Click="DoneDrawing_Click"
                         ToolTip="Use this drawing for everything you type from now on"/>
                 <Button Style="{StaticResource ToolButton}" Content="Cancel" Click="CancelDrawing_Click" Height="40"
