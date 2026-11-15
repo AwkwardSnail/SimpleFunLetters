@@ -31,9 +31,12 @@ Both versions open and save the same `.funletter` files.
     right mouse button rubs a line out).
   - **Arc:** click the middle of the circle; a dashed circle follows the mouse,
     so click when it's the size you want. The pointer then sticks to the
-    circle: click a yellow cross where the arc starts and another where it
-    ends, and the arc joins them the short way round. Esc or the right mouse
-    button starts the arc again.
+    circle: click a yellow cross where the arc starts, move round the circle
+    the way the arc should go (the arc follows), and click to finish. Go all
+    the way round for a full circle. Esc or the right mouse button starts the
+    arc again.
+  - **Undo** (or Ctrl+Z) takes back the last stroke, line, arc, Clear or
+    change of squares, one at a time. **Clear** rubs out the whole drawing.
   - **Squares:** Large (18 × 24), Medium (30 × 40) or Small (45 × 60) for finer
     detail. Changing the size fits the drawing onto the new squares. Each
     letter keeps its own size, and new drawings start with the last size used.

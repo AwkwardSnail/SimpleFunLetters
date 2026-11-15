@@ -110,12 +110,9 @@
             <StackPanel Margin="18,16,18,24" HorizontalAlignment="Center">
               <TextBlock x:Name="DrawTitle" Text="Draw your A" FontSize="20" Margin="0,0,0,4"/>
               <!-- What to do next: changes with the tool (and each step of an arc). -->
-              <TextBlock x:Name="DrawHint" Text="Click and drag on the squares to draw. The right mouse button rubs out."
+              <TextBlock x:Name="DrawHint" Text="Click and drag to draw. The right button rubs out. Letters sit on the green line."
                          Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Width="360" MinHeight="40"
-                         HorizontalAlignment="Left"/>
-              <TextBlock Text="Letters sit on the green line; tails like the one on g hang below it."
-                         Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Width="360" Margin="0,0,0,12"
-                         HorizontalAlignment="Left"/>
+                         HorizontalAlignment="Left" Margin="0,0,0,10"/>
 
               <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" HorizontalAlignment="Left">
                 <local:DrawingGrid x:Name="Drawing"/>
@@ -129,7 +126,12 @@
                 <RadioButton x:Name="LineTool" Style="{StaticResource ToolRadio}" Content="Line"
                              GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw a straight line"/>
                 <RadioButton x:Name="ArcTool" Style="{StaticResource ToolRadio}" Content="Arc"
-                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw part of a circle"/>
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw part of a circle, or all of it"/>
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <Button x:Name="UndoDrawingButton" Style="{StaticResource ToolButton}" Content="Undo" IsEnabled="False"
+                        Click="UndoDrawing_Click" ToolTip="Take back the last stroke, line, arc, Clear or change of squares (Ctrl+Z)"/>
                 <Button Style="{StaticResource ToolButton}" Content="Clear" Click="ClearDrawing_Click"
                         ToolTip="Rub out the whole drawing. Done with nothing drawn goes back to the normal letter."/>
               </StackPanel>

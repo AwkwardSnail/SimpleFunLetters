@@ -110,6 +110,7 @@ public partial class MainWindow
         var (columns, rows) = Grid.Sizes.FirstOrDefault(s => s.Rows == settings.DrawingRows, Grid.Sizes[0]);
         Drawing.Pixels = designs.CurrentDrawing(c) ?? Grid.Empty(columns, rows);
         ShowSquaresSize();
+        UndoDrawingButton.IsEnabled = false; // a fresh start for each letter
         PenTool.IsChecked = true;
         Drawing.Tool = DrawingTool.Pen;
         DrawHint.Text = Drawing.Hint;
@@ -135,6 +136,15 @@ public partial class MainWindow
     }
 
     void Drawing_HintChanged(object? sender, EventArgs e) => DrawHint.Text = Drawing.Hint;
+
+    /// <summary>After any step on the paper: Undo is available, and the size buttons match the squares.</summary>
+    void Drawing_Changed(object? sender, EventArgs e)
+    {
+        UndoDrawingButton.IsEnabled = Drawing.CanUndo;
+        ShowSquaresSize();
+    }
+
+    void UndoDrawing_Click(object sender, RoutedEventArgs e) => Drawing.Undo();
 
     bool showingSquaresSize;
 

@@ -14,8 +14,10 @@ public enum DrawingTool { Pen, Eraser, Line, Arc }
 /// <item>Pen / Eraser: click and drag. The right button always rubs out.</item>
 /// <item>Line: press, drag and let go for a straight line (right button: rub one out).</item>
 /// <item>Arc: click the centre; a dashed circle follows the mouse to set the size,
-/// click to keep it; the mouse then snaps to the circle: click two yellow crosses,
-/// and the arc joins them the short way round. Right button or Esc starts again.</item>
+/// click to keep it; the mouse then snaps to the circle: click a yellow cross where
+/// the arc starts, move round the circle the way it should go (all the way round
+/// for a full circle), and click where it ends. Right button or Esc starts again.</item>
+/// <item>Undo (or Ctrl+Z) takes back one stroke, line, arc, Clear or change of squares.</item>
 /// </list>
 /// The normal letter shows faintly behind as a guide, with the writing line marked.
 /// </summary>
@@ -80,39 +82,80 @@ public sealed class DrawingGrid : FrameworkElement
     public bool[,] Pixels
     {
         get => Grid.Copy(pixels);
-        set { pixels = Grid.Copy(value); CancelShape(); InvalidateVisual(); }
+        set
+        {
+            pixels = Grid.Copy(value);
+            history.Clear(); // a new drawing to work on: nothing to undo yet
+            before = null;
+            CancelShape();
+            InvalidateVisual();
+        }
+    }
+
+    // ------------------------------------------------------------- undo
+    //
+    // Each stroke, line, arc, Clear or change of squares is one step back.
+
+    readonly Stack<bool[,]> history = new();
+    bool[,]? before;
+
+    /// <summary>Remembers the drawing as it is, before a step that may change it.</summary>
+    void BeginStep() => before ??= Grid.Copy(pixels);
+
+    /// <summary>Keeps the step for Undo, if it changed anything.</summary>
+    void EndStep()
+    {
+        if (before is null) return;
+        if (!Grid.SameAs(before, pixels)) history.Push(before);
+        before = null;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public bool CanUndo => history.Count > 0;
+
+    /// <summary>Takes back the last step (including a change of squares).</summary>
+    public void Undo()
+    {
+        if (!CanUndo) return;
+        CancelShape();
+        before = null;
+        pixels = history.Pop();
+        InvalidateVisual();
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Changes the size of the squares, fitting the drawing onto the new grid.</summary>
     public void SetSize(int columns, int rows)
     {
         if (columns == Columns && rows == Rows) return;
-        pixels = Grid.Resample(pixels, columns, rows);
         CancelShape();
+        BeginStep();
+        pixels = Grid.Resample(pixels, columns, rows);
         InvalidateVisual();
-        Changed?.Invoke(this, EventArgs.Empty);
+        EndStep();
     }
 
     public void Clear()
     {
-        pixels = Grid.Empty(Columns, Rows);
         CancelShape();
+        BeginStep();
+        pixels = Grid.Empty(Columns, Rows);
         InvalidateVisual();
-        Changed?.Invoke(this, EventArgs.Empty);
+        EndStep();
     }
 
     /// <summary>What to do next, for the line of instructions above the paper.</summary>
     public string Hint => tool switch
     {
-        DrawingTool.Pen => "Click and drag on the squares to draw. The right mouse button rubs out.",
-        DrawingTool.Eraser => "Click and drag on the squares to rub them out.",
+        DrawingTool.Pen => "Click and drag to draw. The right button rubs out. Letters sit on the green line.",
+        DrawingTool.Eraser => "Click and drag to rub squares out.",
         DrawingTool.Line => "Press where the line starts, drag to where it ends, and let go.",
         _ => arcStep switch
         {
             ArcStep.Centre => "Click where the middle of the circle goes.",
             ArcStep.Radius => "Move to make the circle the size you want, then click.",
             ArcStep.FirstCross => "Click on the circle where the arc starts.",
-            _ => "Click on the circle where the arc ends. It joins the crosses the short way round.",
+            _ => "Move round the circle the way the arc goes, then click. All the way round makes a circle.",
         },
     };
 
@@ -176,8 +219,8 @@ public sealed class DrawingGrid : FrameworkElement
         double radius = arcRadius * cell;
         if (radius > 0.5) dc.DrawEllipse(null, CirclePen, centre, radius, radius);
 
-        if (arcStep == ArcStep.SecondCross && hover is Point end)
-            dc.DrawGeometry(null, PreviewPen, ArcGeometry(arcFirst, end));
+        if (arcStep == ArcStep.SecondCross && Math.Abs(arcSweep) > 1e-6)
+            dc.DrawGeometry(null, PreviewPen, ArcGeometry(arcStartAngle, arcSweep));
         if (arcStep >= ArcStep.SecondCross) DrawCross(dc, Screen(arcFirst), 7, EdgePen, YellowPen);
         if (arcStep >= ArcStep.FirstCross && hover is Point h) DrawCross(dc, Screen(h), 7, EdgePen, YellowPen);
     }
@@ -192,31 +235,37 @@ public sealed class DrawingGrid : FrameworkElement
         }
     }
 
-    /// <summary>The short way round the circle between two points on it (grid units in, screen out).</summary>
-    Geometry ArcGeometry(Point from, Point to)
+    /// <summary>The arc so far, as a smooth line on screen (it can go all the way round).</summary>
+    Geometry ArcGeometry(double start, double sweep)
     {
         double cell = Cell;
-        var (start, sweep) = ShortArc(from, to);
+        Point At(double a) => new((arcCentre.X + arcRadius * Math.Cos(a)) * cell, (arcCentre.Y + arcRadius * Math.Sin(a)) * cell);
+        int steps = Math.Max(8, (int)Math.Ceiling(Math.Abs(sweep) * arcRadius * cell / 3));
         var g = new StreamGeometry();
         using (var ctx = g.Open())
         {
-            ctx.BeginFigure(new Point(from.X * cell, from.Y * cell), false, false);
-            ctx.ArcTo(new Point(to.X * cell, to.Y * cell), new Size(arcRadius * cell, arcRadius * cell), 0,
-                false, sweep > 0 ? SweepDirection.Clockwise : SweepDirection.Counterclockwise, true, false);
+            ctx.BeginFigure(At(start), false, false);
+            for (int i = 1; i <= steps; i++) ctx.LineTo(At(start + sweep * i / steps), true, true);
         }
         g.Freeze();
         return g;
     }
 
-    /// <summary>The angle of the first point, and the shorter turn (−π to π) to the second.</summary>
-    (double Start, double Sweep) ShortArc(Point from, Point to)
+    double AngleOf(Point g) => Math.Atan2(g.Y - arcCentre.Y, g.X - arcCentre.X);
+
+    /// <summary>
+    /// Follows the mouse round the circle: the arc grows (or shrinks) by however
+    /// far the mouse has turned, in whichever direction, up to a full circle.
+    /// </summary>
+    void FollowRound(Point g)
     {
-        double a1 = Math.Atan2(from.Y - arcCentre.Y, from.X - arcCentre.X);
-        double a2 = Math.Atan2(to.Y - arcCentre.Y, to.X - arcCentre.X);
-        double sweep = a2 - a1;
-        while (sweep > Math.PI) sweep -= 2 * Math.PI;
-        while (sweep <= -Math.PI) sweep += 2 * Math.PI;
-        return (a1, sweep);
+        if ((g - arcCentre).Length < 1e-6) return; // right on the centre: no direction
+        double angle = AngleOf(g);
+        double turn = angle - arcLastAngle;
+        while (turn > Math.PI) turn -= 2 * Math.PI;
+        while (turn <= -Math.PI) turn += 2 * Math.PI;
+        arcSweep = Math.Clamp(arcSweep + turn, -2 * Math.PI, 2 * Math.PI);
+        arcLastAngle = angle;
     }
 
     // ------------------------------------------------------------- mouse
@@ -232,6 +281,7 @@ public sealed class DrawingGrid : FrameworkElement
     ArcStep arcStep = ArcStep.Centre;
     Point arcCentre, arcFirst;
     double arcRadius;
+    double arcStartAngle, arcSweep, arcLastAngle; // the arc so far follows the mouse round
     Point? hover;               // arc: where the mouse is (on the circle, once it has a size)
 
     Point ToGrid(Point screen) => new(Math.Clamp(screen.X / Cell, 0, Columns), Math.Clamp(screen.Y / Cell, 0, Rows));
@@ -288,16 +338,23 @@ public sealed class DrawingGrid : FrameworkElement
             lineEnd = MiddleOf(SquareAt(g));
             InvalidateVisual();
         }
-        else if (tool == DrawingTool.Arc && arcStep != ArcStep.Centre)
+        else if (tool == DrawingTool.Arc && arcStep != ArcStep.Centre) ArcMove(g);
+    }
+
+    /// <summary>The mouse moving while an arc is being placed.</summary>
+    void ArcMove(Point g)
+    {
+        if (arcStep == ArcStep.Radius)
         {
-            if (arcStep == ArcStep.Radius)
-            {
-                arcRadius = (g - arcCentre).Length;
-                hover = null;
-            }
-            else hover = OnCircle(g); // the mouse snaps to the circle
-            InvalidateVisual();
+            arcRadius = (g - arcCentre).Length;
+            hover = null;
         }
+        else
+        {
+            if (arcStep == ArcStep.SecondCross) FollowRound(g);
+            hover = OnCircle(g); // the mouse snaps to the circle
+        }
+        InvalidateVisual();
     }
 
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e) { EndStroke(); EndLine(e); }
@@ -307,11 +364,18 @@ public sealed class DrawingGrid : FrameworkElement
     {
         strokeValue = null;
         last = null;
+        EndStep();
         if (lineStart is not null) { lineStart = lineEnd = null; InvalidateVisual(); }
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Key == Key.Z && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            Undo();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Escape && (tool == DrawingTool.Arc && arcStep != ArcStep.Centre || lineStart is not null))
         {
             CancelShape();
@@ -325,6 +389,7 @@ public sealed class DrawingGrid : FrameworkElement
         bool hadArc = arcStep != ArcStep.Centre;
         arcStep = ArcStep.Centre;
         arcRadius = 0;
+        arcSweep = 0;
         hover = null;
         lineStart = lineEnd = null;
         if (IsMouseCaptured) ReleaseMouseCapture();
@@ -336,6 +401,7 @@ public sealed class DrawingGrid : FrameworkElement
 
     void StartStroke(Point g, bool draw)
     {
+        BeginStep();
         strokeValue = draw;
         last = null;
         CaptureMouse();
@@ -348,6 +414,7 @@ public sealed class DrawingGrid : FrameworkElement
         strokeValue = null;
         last = null;
         if (IsMouseCaptured) ReleaseMouseCapture();
+        EndStep();
     }
 
     void Paint(Point g)
@@ -377,8 +444,10 @@ public sealed class DrawingGrid : FrameworkElement
         var b = MiddleOf(SquareAt(ToGrid(e.GetPosition(this))));
         lineStart = lineEnd = null;
         if (IsMouseCaptured) ReleaseMouseCapture();
-        if (SetAlong(a, b, lineValue)) Changed?.Invoke(this, EventArgs.Empty);
+        BeginStep();
+        SetAlong(a, b, lineValue);
         InvalidateVisual();
+        EndStep();
     }
 
     /// <summary>
@@ -425,12 +494,16 @@ public sealed class DrawingGrid : FrameworkElement
                 break;
             case ArcStep.FirstCross:
                 arcFirst = OnCircle(g);
+                arcStartAngle = arcLastAngle = AngleOf(arcFirst);
+                arcSweep = 0;
                 arcStep = ArcStep.SecondCross;
                 break;
             default:
-                DrawArc(arcFirst, OnCircle(g));
+                FollowRound(g); // include any last bit of movement
+                DrawArc(arcStartAngle, arcSweep);
                 arcStep = ArcStep.Centre;
                 arcRadius = 0;
+                arcSweep = 0;
                 hover = null;
                 break;
         }
@@ -438,18 +511,18 @@ public sealed class DrawingGrid : FrameworkElement
         HintChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>Inks the squares along the shorter arc between two points on the circle.</summary>
-    void DrawArc(Point from, Point to)
+    /// <summary>Inks the squares along the arc: from an angle, turning by sweep (up to a full circle).</summary>
+    void DrawArc(double start, double sweep)
     {
-        var (start, sweep) = ShortArc(from, to);
+        BeginStep();
         // About one step per square along the arc, so it stays one square thin.
         int steps = Math.Max(1, (int)Math.Ceiling(Math.Abs(sweep) * arcRadius));
-        bool changed = false;
         for (int i = 0; i <= steps; i++)
         {
             double a = start + sweep * i / steps;
-            changed |= Set(new Point(arcCentre.X + arcRadius * Math.Cos(a), arcCentre.Y + arcRadius * Math.Sin(a)), true);
+            Set(new Point(arcCentre.X + arcRadius * Math.Cos(a), arcCentre.Y + arcRadius * Math.Sin(a)), true);
         }
-        if (changed) Changed?.Invoke(this, EventArgs.Empty);
+        InvalidateVisual();
+        EndStep();
     }
 }

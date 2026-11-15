@@ -112,6 +112,7 @@ public partial class MainWindow : Window
         designs = NewDesigns();
         BuildLetterTiles();
         Drawing.HintChanged += Drawing_HintChanged;
+        Drawing.Changed += Drawing_Changed;
         ShowLetter(new Letter { Paragraphs = { new LetterParagraph { SizePt = currentSizePt } } });
         UpdateLayoutForMargins();
         UpdateFormatControls();
