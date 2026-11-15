@@ -22,7 +22,7 @@ Both versions open and save the same `.funletter` files.
 
 - **Your letters (left):** capital letters, small letters, punctuation and
   numbers. Click one to draw your own. Letters you haven't drawn use the normal
-  font (Atkinson Hyperlegible Next).
+  font: Atkinson Hyperlegible Next, or Literata when the font is set to Serif.
 - **Drawing a letter:** squared paper 18 squares wide and 24 tall. Click and
   drag on the squares; the right mouse button
   rubs out (or choose Eraser). The normal letter shows faintly behind as a
@@ -35,8 +35,17 @@ Both versions open and save the same `.funletter` files.
   of Done. Only that letter changes; Undo puts it back.
 - **The page (right):** the same page as SimpleLetters. The four arrows mark the
   margins: click one to show a line where the margin is, drag it to move it.
-  The − and + buttons set the size of what you type next. **Zoom** makes the
-  page bigger or smaller on screen (or hold Ctrl and turn the mouse wheel).
+- **The toolbar:** the same as SimpleLetters.
+  - **Font: Sans / Font: Serif** switches the letters you haven't drawn between
+    Atkinson Hyperlegible Next and Literata. Your drawn letters always stay as
+    you drew them.
+  - **B, I, U** for bold, italic and underline (or Ctrl+B, Ctrl+I, Ctrl+U).
+    Drawn letters are thickened or slanted, since a drawing has no bold or
+    italic of its own.
+  - **Text size − / +** and **Zoom** (or hold Ctrl and turn the mouse wheel).
+  - With text selected, the font, B, I, U and size buttons change the
+    selection (one undo step each); with nothing selected, they apply to what
+    you type next. Moving the cursor into existing text picks up its look.
 - **Open, Save, Print, Undo, Redo:** toolbar buttons, or Ctrl+O, Ctrl+S,
   Ctrl+P, Ctrl+Z and Ctrl+Y.
 - Your latest letters are remembered, so a new letter starts with them.
@@ -68,12 +77,16 @@ typing uses), and the text with its sizes and the font version of each piece.
     <p size="12">
       <run size="12">Hello, </run>
       <run size="12" font="1">hi there</run>
+      <run size="12" font="1" serif="true" bold="true"> friend</run>
     </p>
   </text>
 </funletter>
 ```
 
-A `run` without a `font` uses the normal letters. Drawings made on the first
+A `run` without a `font` uses the normal letters. A run can also have
+`serif="true"`, `bold="true"`, `italic="true"` and `underline="true"`; without
+them it is plain Sans. (SimpleLetters' `.sletter` files write `font="serif"`
+instead, and open with their fonts and styles.) Drawings made on the first
 version's 12 × 16 grid are scaled up to fit when they're opened. SimpleLetters Fun can also
 open SimpleLetters' `.sletter` files and plain `.txt` files.
 
@@ -123,5 +136,9 @@ Your letters and drawings stay on your device. See the
 
 The code is under the [MIT licence](LICENSE), so you're welcome to fork it. The
 Awkward Snail name and icon are not covered by the licence: please don't use them
-for your fork. The bundled font, Atkinson Hyperlegible Next, keeps its own
-licence (SIL OFL 1.1, see `desktop/SimpleFunLetters/Fonts/OFL.txt`).
+for your fork. The bundled fonts, Atkinson Hyperlegible Next and Literata, keep
+their own licence (SIL OFL 1.1, see `desktop/SimpleFunLetters/Fonts/OFL.txt` and
+`OFL-Literata.txt`).
+
+The browser version still has the earlier toolbar: no font choice, bold, italic
+or underline.

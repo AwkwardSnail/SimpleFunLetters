@@ -22,7 +22,8 @@
     <!-- Atkinson Hyperlegible Next, SIL OFL 1.1 (Fonts\OFL.txt). Built into the
          app so it works offline and doesn't need to be installed. -->
     <Resource Include="Fonts\*.ttf" />
-    <None Include="Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Literata (the serif choice), SIL OFL 1.1 (Fonts\OFL-Literata.txt). -->
+    <None Include="Fonts\*.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

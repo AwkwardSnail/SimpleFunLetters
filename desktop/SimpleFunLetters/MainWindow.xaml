@@ -18,40 +18,64 @@
     <!-- Toolbar -->
     <Border DockPanel.Dock="Top" Background="{StaticResource BarBrush}"
             BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="16,8">
+      <!-- Each group of controls wraps to the next line as a whole when the window is narrow. -->
       <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-        <TextBlock Text="SimpleLetters Fun" FontFamily="Consolas" FontSize="20"
-                   VerticalAlignment="Center" Margin="0,0,24,0"/>
+        <StackPanel Orientation="Horizontal" Margin="0,2">
+          <Button Style="{StaticResource ToolButton}" Command="Open" Content="Open" ToolTip="Open a letter (Ctrl+O)"/>
+          <Button Style="{StaticResource ToolButton}" Command="Save" Content="Save" ToolTip="Save (Ctrl+S)"/>
+          <Button Style="{StaticResource ToolButton}" Command="Print" Content="Print" ToolTip="Print on A4 (Ctrl+P)"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,2">
+          <Border Style="{StaticResource Separator}"/>
 
-        <Button Style="{StaticResource ToolButton}" Command="Open" Content="Open" ToolTip="Open a letter (Ctrl+O)"/>
-        <Button Style="{StaticResource ToolButton}" Command="Save" Content="Save" ToolTip="Save (Ctrl+S)"/>
-        <Button Style="{StaticResource ToolButton}" Command="Print" Content="Print" ToolTip="Print on A4 (Ctrl+P)"/>
+          <Button Style="{StaticResource ToolButton}" Command="Undo" CommandTarget="{Binding ElementName=Editor}"
+                  Content="Undo" ToolTip="Undo (Ctrl+Z)"/>
+          <Button Style="{StaticResource ToolButton}" Command="Redo" CommandTarget="{Binding ElementName=Editor}"
+                  Content="Redo" ToolTip="Redo (Ctrl+Y)"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,2">
+          <Border Style="{StaticResource Separator}"/>
 
-        <Border Style="{StaticResource Separator}"/>
+          <!-- Font and style: with text selected they change the selection;
+               otherwise they apply to what you type next. -->
+          <!-- One button: shows the font in use (in that font); press it to switch. -->
+          <Button x:Name="FontButton" Style="{StaticResource ToolButton}" MinWidth="110" Content="Font: Sans"
+                  FontFamily="{StaticResource PageFont}" Click="Font_Click"/>
+          <ToggleButton x:Name="BoldButton" Style="{StaticResource ToggleTool}" Margin="10,0,6,0" Click="Bold_Click"
+                        ToolTip="Bold (Ctrl+B)">
+            <TextBlock Text="B" FontWeight="Bold"/>
+          </ToggleButton>
+          <ToggleButton x:Name="ItalicButton" Style="{StaticResource ToggleTool}" Click="Italic_Click"
+                        ToolTip="Italic (Ctrl+I)">
+            <TextBlock Text="I" FontStyle="Italic"/>
+          </ToggleButton>
+          <ToggleButton x:Name="UnderlineButton" Style="{StaticResource ToggleTool}" Click="Underline_Click"
+                        ToolTip="Underline (Ctrl+U)">
+            <TextBlock Text="U" TextDecorations="Underline"/>
+          </ToggleButton>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,2">
+          <Border Style="{StaticResource Separator}"/>
 
-        <Button Style="{StaticResource ToolButton}" Command="Undo" CommandTarget="{Binding ElementName=Editor}"
-                Content="Undo" ToolTip="Undo (Ctrl+Z)"/>
-        <Button Style="{StaticResource ToolButton}" Command="Redo" CommandTarget="{Binding ElementName=Editor}"
-                Content="Redo" ToolTip="Redo (Ctrl+Y)"/>
+          <TextBlock Text="Text size" Foreground="{StaticResource GreenDimBrush}"
+                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+          <Button x:Name="SmallerButton" Style="{StaticResource StepperButton}" Content="−"
+                  Click="Smaller_Click" ToolTip="Smaller text from here on"/>
+          <TextBlock x:Name="SizeLabel" Text="12 pt" MinWidth="56" TextAlignment="Center" VerticalAlignment="Center"/>
+          <Button x:Name="LargerButton" Style="{StaticResource StepperButton}" Content="+"
+                  Click="Larger_Click" ToolTip="Larger text from here on"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,2">
+          <Border Style="{StaticResource Separator}"/>
 
-        <Border Style="{StaticResource Separator}"/>
-
-        <TextBlock Text="Text size" Foreground="{StaticResource GreenDimBrush}"
-                   VerticalAlignment="Center" Margin="0,0,10,0"/>
-        <Button x:Name="SmallerButton" Style="{StaticResource StepperButton}" Content="−"
-                Click="Smaller_Click" ToolTip="Smaller text from here on"/>
-        <TextBlock x:Name="SizeLabel" Text="12 pt" MinWidth="56" TextAlignment="Center" VerticalAlignment="Center"/>
-        <Button x:Name="LargerButton" Style="{StaticResource StepperButton}" Content="+"
-                Click="Larger_Click" ToolTip="Larger text from here on"/>
-
-        <Border Style="{StaticResource Separator}"/>
-
-        <TextBlock Text="Zoom" Foreground="{StaticResource GreenDimBrush}"
-                   VerticalAlignment="Center" Margin="0,0,10,0"/>
-        <Button x:Name="ZoomOutButton" Style="{StaticResource StepperButton}" Content="−"
-                Click="ZoomOut_Click" ToolTip="Make the page smaller on screen (Ctrl + mouse wheel)"/>
-        <TextBlock x:Name="ZoomLabel" Text="100%" MinWidth="56" TextAlignment="Center" VerticalAlignment="Center"/>
-        <Button x:Name="ZoomInButton" Style="{StaticResource StepperButton}" Content="+"
-                Click="ZoomIn_Click" ToolTip="Make the page bigger on screen (Ctrl + mouse wheel)"/>
+          <TextBlock Text="Zoom" Foreground="{StaticResource GreenDimBrush}"
+                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+          <Button x:Name="ZoomOutButton" Style="{StaticResource StepperButton}" Content="−"
+                  Click="ZoomOut_Click" ToolTip="Make the page smaller on screen (Ctrl + mouse wheel)"/>
+          <TextBlock x:Name="ZoomLabel" Text="100%" MinWidth="56" TextAlignment="Center" VerticalAlignment="Center"/>
+          <Button x:Name="ZoomInButton" Style="{StaticResource StepperButton}" Content="+"
+                  Click="ZoomIn_Click" ToolTip="Make the page bigger on screen (Ctrl + mouse wheel)"/>
+        </StackPanel>
       </WrapPanel>
     </Border>
 

@@ -34,8 +34,9 @@ public partial class MainWindow : Window
 
     static readonly Brush GuideBrush = Frozen(new SolidColorBrush(Color.FromRgb(0x3C, 0x8C, 0x48)));
 
-    // Ctrl shortcuts the page accepts. Everything else (Ctrl+B, Ctrl+I, Ctrl+E,
-    // Ctrl+] and so on) would add formatting SimpleLetters Fun doesn't offer.
+    // Ctrl shortcuts the page accepts, besides Ctrl+B, I and U (handled in
+    // MainWindow.Format.cs). Everything else (Ctrl+E, Ctrl+] and so on) would
+    // add formatting SimpleLetters Fun doesn't offer.
     static readonly HashSet<Key> AllowedCtrlKeys =
     [
         Key.A, Key.C, Key.V, Key.X, Key.Z, Key.Y, Key.O, Key.S, Key.P,
@@ -104,12 +105,13 @@ public partial class MainWindow : Window
         Guides.Children.Add(valueLabel);
 
         currentSizePt = Math.Clamp(settings.FontSize, MinFontPt, MaxFontPt);
+        currentSerif = settings.Serif;
         Designs.CleanUpOldFonts();
         designs = NewDesigns();
         BuildLetterTiles();
         ShowLetter(new Letter { Paragraphs = { new LetterParagraph { SizePt = currentSizePt } } });
         UpdateLayoutForMargins();
-        UpdateSizeControls();
+        UpdateFormatControls();
         UpdateTitle();
 
         // Open a file passed on the command line (e.g. double-clicking a .funletter file).
@@ -308,41 +310,6 @@ public partial class MainWindow : Window
         }
     }
 
-    // -------------------------------------------------------------- Text size
-    //
-    // − and + change the size of what is typed next, from the caret onwards.
-    // Text already on the page keeps its size (and its letter drawings).
-
-    void UpdateSizeControls()
-    {
-        SizeLabel.Text = $"{currentSizePt:0.#} pt";
-        SmallerButton.IsEnabled = currentSizePt > MinFontPt;
-        LargerButton.IsEnabled = currentSizePt < MaxFontPt;
-    }
-
-    void ChangeFontSize(double delta)
-    {
-        currentSizePt = Math.Clamp(Math.Round(currentSizePt) + delta, MinFontPt, MaxFontPt);
-        settings.FontSize = currentSizePt; // new letters start at the last size used
-        settings.Save();
-        UpdateSizeControls();
-        Editor.LockCurrentUndoUnit();
-        Editor.Focus();
-    }
-
-    void Smaller_Click(object sender, RoutedEventArgs e) => ChangeFontSize(-1);
-    void Larger_Click(object sender, RoutedEventArgs e) => ChangeFontSize(1);
-
-    /// <summary>True when the text at the caret already has the current size and letter drawings.</summary>
-    bool CaretMatchesCurrentFormat()
-    {
-        var here = Editor.CaretPosition.Parent as TextElement;
-        double sizeHere = here?.FontSize ?? Editor.Document.FontSize;
-        var familyHere = here?.FontFamily ?? Editor.Document.FontFamily;
-        return Math.Abs(sizeHere - PtToDip(currentSizePt)) <= 0.01
-            && familyHere.Source == designs.Current.Family.Source;
-    }
-
     // ------------------------------------------------------------------ Editor
 
     void MarkDirty()
@@ -358,89 +325,7 @@ public partial class MainWindow : Window
         CheckOverflow();
     }
 
-    /// <summary>Moving the caret picks up the size of the text it is in.</summary>
-    void Editor_SelectionChanged(object sender, RoutedEventArgs e)
-    {
-        if (settingText) return;
-        if (Editor.Selection.GetPropertyValue(TextElement.FontSizeProperty) is double dip)
-        {
-            currentSizePt = Math.Clamp(DipToPt(dip), MinFontPt, MaxFontPt);
-            UpdateSizeControls();
-        }
-    }
-
-    void Editor_PreviewTextInput(object sender, TextCompositionEventArgs e)
-    {
-        // WPF would otherwise undo all continuous typing in one go; start a
-        // new undo step at each word instead.
-        if (e.Text == " ") Editor.LockCurrentUndoUnit();
-
-        // Ordinary typing into text that already looks right: let WPF do it.
-        var selection = Editor.Selection;
-        if (string.IsNullOrEmpty(e.Text) || e.Text.Any(char.IsControl)) return;
-        if (selection.IsEmpty && CaretMatchesCurrentFormat()) return;
-
-        // Otherwise the app types this character itself, as a new piece of text
-        // in the current size and letters; the rest of the word then follows
-        // it as ordinary typing. (WPF's own "format for the next character" is
-        // unreliable once the caret has moved, and it won't type into an empty
-        // piece of text.) This first character is its own undo step.
-        e.Handled = true;
-        Editor.BeginChange();
-        try
-        {
-            if (!selection.IsEmpty) selection.Text = "";
-            var at = selection.Start.GetInsertionPosition(LogicalDirection.Forward);
-            var run = new Run(e.Text, at)
-            {
-                FontSize = PtToDip(currentSizePt),
-                FontFamily = designs.Current.Family,
-            };
-            Editor.CaretPosition = run.ContentEnd;
-        }
-        finally
-        {
-            Editor.EndChange();
-        }
-    }
-
-    void Editor_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && !AllowedCtrlKeys.Contains(key))
-        {
-            e.Handled = true; // no bold, italic, alignment, lists, etc.
-            return;
-        }
-
-        // A new line, or moving the caret, starts a new undo step.
-        if (key is Key.Enter or Key.Left or Key.Right or Key.Up or Key.Down
-                or Key.Home or Key.End or Key.PageUp or Key.PageDown)
-            Editor.LockCurrentUndoUnit();
-    }
-
     void Editor_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) => Editor.LockCurrentUndoUnit();
-
-    /// <summary>Pastes as plain text in the current size and letters, never with outside formatting.</summary>
-    void Editor_Pasting(object sender, DataObjectPastingEventArgs e)
-    {
-        e.CancelCommand();
-        if (e.DataObject.GetData(DataFormats.UnicodeText) is not string text) return;
-
-        Editor.BeginChange();
-        try
-        {
-            var selection = Editor.Selection;
-            selection.Text = text.Replace("\r\n", "\n").Replace('\r', '\n');
-            selection.ApplyPropertyValue(TextElement.FontSizeProperty, PtToDip(currentSizePt));
-            selection.ApplyPropertyValue(TextElement.FontFamilyProperty, designs.Current.Family);
-            selection.Select(selection.End, selection.End);
-        }
-        finally
-        {
-            Editor.EndChange();
-        }
-    }
 
     /// <summary>The page doesn't scroll on its own: the mouse wheel scrolls the desk.</summary>
     void Editor_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -528,7 +413,7 @@ public partial class MainWindow : Window
 
         // A .funletter brings its own drawings. Anything else starts with the
         // child's latest letters for new typing; its existing text stays normal.
-        designs = isFunLetter ? new Designs(NormalFont) : NewDesigns();
+        designs = isFunLetter ? new Designs(NormalFont, SerifFamily) : NewDesigns();
         if (isFunLetter)
             designs.Restore(letter.Glyphs, letter.Fonts.Select(f => (f.Id, f.GlyphIds.AsEnumerable())), letter.CurrentFont);
         RefreshLetterTiles();

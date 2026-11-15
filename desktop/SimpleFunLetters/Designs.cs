@@ -16,8 +16,12 @@ public sealed class FontVersion
 {
     public required int Id { get; init; }
     public required IReadOnlyDictionary<char, Glyph> Glyphs { get; init; }
-    /// <summary>The drawn letters, falling back to the normal font for the rest.</summary>
+    /// <summary>The drawn letters, falling back to the normal (Sans) font for the rest.</summary>
     public required FontFamily Family { get; init; }
+    /// <summary>The same drawn letters, falling back to the Serif font (Literata) for the rest.</summary>
+    public required FontFamily SerifFamily { get; init; }
+
+    public FontFamily FamilyFor(bool serif) => serif ? SerifFamily : Family;
 }
 
 /// <summary>All the letters designed in one document, with every earlier version.</summary>
@@ -30,15 +34,19 @@ public sealed class Designs
     public const string AllCharacters = Capitals + Smalls + Punctuation + Numbers;
 
     readonly FontFamily normal;
+    readonly FontFamily serif;
     readonly List<Glyph> glyphs = new();
     readonly List<FontVersion> versions = new();
     // Font files and names are unique to this session so Windows never mixes
     // up two documents' letters.
     readonly string token = Guid.NewGuid().ToString("N")[..10];
 
-    public Designs(FontFamily normal)
+    /// <param name="normal">The Sans font for letters not drawn (Atkinson Hyperlegible Next).</param>
+    /// <param name="serif">The Serif font for letters not drawn (Literata).</param>
+    public Designs(FontFamily normal, FontFamily serif)
     {
         this.normal = normal;
+        this.serif = serif;
         Current = AddVersion(0, new Dictionary<char, Glyph>());
     }
 
@@ -130,29 +138,70 @@ public sealed class Designs
         Current = currentId is int cid && versions.FirstOrDefault(v => v.Id == cid) is { } v2 ? v2 : versions.MaxBy(v => v.Id)!;
     }
 
+    /// <summary>The version a piece of text was typed with (by its Sans or Serif family).</summary>
     public FontVersion VersionOf(FontFamily family) =>
-        versions.LastOrDefault(v => v.Family.Source == family.Source) ?? versions[0];
+        versions.LastOrDefault(v => v.Family.Source == family.Source || v.SerifFamily.Source == family.Source) ?? versions[0];
+
+    /// <summary>True when a piece of text uses the Serif font for letters that aren't drawn.</summary>
+    public bool IsSerif(FontFamily family) =>
+        family.Source == serif.Source || versions.Any(v => v.SerifFamily.Source == family.Source && v.Family.Source != family.Source);
 
     public FontVersion VersionById(int id) => versions.FirstOrDefault(v => v.Id == id) ?? versions[0];
 
     FontVersion AddVersion(int id, Dictionary<char, Glyph> map)
     {
-        var version = new FontVersion { Id = id, Glyphs = map, Family = MakeFamily(id, map) };
+        var (sans, withSerif) = MakeFamilies(id, map);
+        var version = new FontVersion { Id = id, Glyphs = map, Family = sans, SerifFamily = withSerif };
         versions.Add(version);
         return version;
     }
 
-    FontFamily MakeFamily(int id, IReadOnlyDictionary<char, Glyph> map)
+    (FontFamily Sans, FontFamily Serif) MakeFamilies(int id, IReadOnlyDictionary<char, Glyph> map)
     {
-        if (map.Count == 0) return normal;
+        if (map.Count == 0) return (normal, serif);
 
         string name = $"Fun Letters {token} {id}";
         string file = $"{token}-{id}.ttf";
         Directory.CreateDirectory(FontFolder);
+        CopyBundledFonts();
         File.WriteAllBytes(System.IO.Path.Combine(FontFolder, file),
             PixelFont.Build(name, map.ToDictionary(g => g.Key, g => g.Value.Pixels)));
-        // The drawn font first; anything it doesn't have comes from the normal font.
-        return new FontFamily(new Uri(FontFolder + System.IO.Path.DirectorySeparatorChar), $"./{file}#{name}, {normal.Source}");
+        // The drawn font first; anything it doesn't have comes from Sans or Serif.
+        // Those are copies of the app's own font files in the same folder: a
+        // font family built from a file can't reliably fall back to fonts that
+        // are only inside the app, so they sit right beside the drawn font.
+        var folder = new Uri(FontFolder + System.IO.Path.DirectorySeparatorChar);
+        return (new FontFamily(folder, $"./{file}#{name}, ./#{FamilyName(normal)}"),
+                new FontFamily(folder, $"./{file}#{name}, ./#{FamilyName(serif)}"));
+    }
+
+    /// <summary>"Atkinson Hyperlegible Next" from "pack://application:,,,/Fonts/#Atkinson Hyperlegible Next".</summary>
+    static string FamilyName(FontFamily family) =>
+        family.Source[(family.Source.LastIndexOf('#') + 1)..].Split(',')[0].Trim();
+
+    static bool bundledFontsCopied;
+
+    /// <summary>
+    /// Copies the fonts built into the app (Atkinson Hyperlegible Next and
+    /// Literata, every weight and style) into this copy's font folder, once.
+    /// </summary>
+    static void CopyBundledFonts()
+    {
+        if (bundledFontsCopied) return;
+        var assembly = typeof(Designs).Assembly;
+        using var resources = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.g.resources");
+        if (resources is null) return;
+        using var reader = new System.Resources.ResourceReader(resources);
+        foreach (System.Collections.DictionaryEntry entry in reader)
+        {
+            if (entry.Key is not string key || !key.StartsWith("fonts/") || !key.EndsWith(".ttf")) continue;
+            if (entry.Value is not Stream source) continue;
+            var target = System.IO.Path.Combine(FontFolder, "app-" + System.IO.Path.GetFileName(key));
+            if (File.Exists(target)) continue;
+            using var output = File.Create(target);
+            source.CopyTo(output);
+        }
+        bundledFontsCopied = true;
     }
 
     // ------------------------------------------------------------ storage

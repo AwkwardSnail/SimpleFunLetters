@@ -16,7 +16,7 @@ public partial class MainWindow
     /// <summary>A fresh set of designs that starts with the child's latest letters.</summary>
     Designs NewDesigns()
     {
-        var d = new Designs(NormalFont);
+        var d = new Designs(NormalFont, SerifFamily);
         d.StartFrom(Designs.LoadMyLetters());
         return d;
     }
@@ -176,7 +176,7 @@ public partial class MainWindow
                 var old = designs.VersionOf(run.FontFamily);
                 var updated = designs.WithCurrentDrawingOf(old, c);
                 if (updated == old) continue;
-                run.FontFamily = updated.Family;
+                run.FontFamily = updated.FamilyFor(designs.IsSerif(run.FontFamily)); // keep its Sans or Serif
                 changed = true;
             }
         }

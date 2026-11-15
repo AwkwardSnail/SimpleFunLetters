@@ -9,10 +9,18 @@ using System.Xml.Linq;
 namespace SimpleFunLetters;
 
 /// <summary>
-/// A piece of text in one size and one version of the child's letters, or a
-/// line break (Text is null). Font 0 means the normal letters.
+/// A piece of text in one size, style and version of the child's letters, or a
+/// line break (Text is null). Font 0 means no drawn letters. Letters that aren't
+/// drawn use Sans (Atkinson Hyperlegible Next), or Literata when Serif is set.
 /// </summary>
-public sealed record LetterRun(string? Text, double SizePt, int Font = 0);
+public sealed record LetterRun(string? Text, double SizePt, int Font = 0,
+    bool Serif = false, bool Bold = false, bool Italic = false, bool Underline = false)
+{
+    /// <summary>True when the two pieces look the same (apart from their text).</summary>
+    public bool SameLook(LetterRun other) =>
+        SizePt == other.SizePt && Font == other.Font && Serif == other.Serif
+        && Bold == other.Bold && Italic == other.Italic && Underline == other.Underline;
+}
 
 public sealed class LetterParagraph
 {
@@ -35,11 +43,13 @@ public sealed class LetterParagraph
 ///     &lt;font id="1"&gt;&lt;use glyph="1"/&gt;&lt;/font&gt;
 ///   &lt;/fonts&gt;
 ///   &lt;text&gt;
-///     &lt;p size="12"&gt;&lt;run size="12" font="1"&gt;a cat&lt;/run&gt;&lt;/p&gt;
+///     &lt;p size="12"&gt;&lt;run size="12" font="1"&gt;a cat&lt;/run&gt;&lt;run size="12" font="1" serif="true" bold="true"&gt; sat&lt;/run&gt;&lt;/p&gt;
 ///   &lt;/text&gt;
 /// &lt;/funletter&gt;
 /// </code>
-/// SimpleLetters' .sletter files open too, in the normal letters.
+/// A run's serif, bold, italic and underline are only written when used.
+/// SimpleLetters' .sletter files open too, in the normal letters, keeping their
+/// own font="serif", bold, italic and underline.
 /// </summary>
 public sealed class Letter
 {
@@ -105,14 +115,12 @@ public sealed class Letter
             switch (inline)
             {
                 case Run run when run.Text.Length > 0:
-                    double size = DipToPt(run.FontSize);
-                    int font = designs.VersionOf(run.FontFamily).Id;
+                    var piece = LookOf(run, designs) with { Text = run.Text };
                     // Merge neighbouring runs that look the same to keep the file tidy.
-                    if (paragraph.Runs.Count > 0 && paragraph.Runs[^1] is { Text: { } prev } last
-                        && last.SizePt == size && last.Font == font)
+                    if (paragraph.Runs.Count > 0 && paragraph.Runs[^1] is { Text: { } prev } last && last.SameLook(piece))
                         paragraph.Runs[^1] = last with { Text = prev + run.Text };
                     else
-                        paragraph.Runs.Add(new LetterRun(run.Text, size, font));
+                        paragraph.Runs.Add(piece);
                     break;
                 case LineBreak lineBreak:
                     paragraph.Runs.Add(new LetterRun(null, DipToPt(lineBreak.FontSize)));
@@ -122,6 +130,33 @@ public sealed class Letter
                     break;
             }
         }
+    }
+
+    /// <summary>The size, style and letters of a piece of text (or of the paragraph at an empty line).</summary>
+    public static LetterRun LookOf(TextElement element, Designs designs) => new(null, DipToPt(element.FontSize),
+        Font: designs.VersionOf(element.FontFamily).Id,
+        Serif: designs.IsSerif(element.FontFamily),
+        Bold: element.FontWeight.ToOpenTypeWeight() >= FontWeights.SemiBold.ToOpenTypeWeight(),
+        Italic: element.FontStyle == FontStyles.Italic || element.FontStyle == FontStyles.Oblique,
+        Underline: element is Inline inline && IsUnderlined(inline));
+
+    /// <summary>True when the text, or a span around it, is underlined.</summary>
+    public static bool IsUnderlined(Inline inline)
+    {
+        for (DependencyObject? e = inline; e is Inline i; e = i.Parent)
+            if (i.TextDecorations?.Any(d => d.Location == TextDecorationLocation.Underline) == true)
+                return true;
+        return false;
+    }
+
+    /// <summary>Gives a piece of text in the editor (or for printing) the look of a run.</summary>
+    public static void Style(Run run, LetterRun look, Designs designs)
+    {
+        run.FontSize = PtToDip(look.SizePt);
+        run.FontFamily = designs.VersionById(look.Font).FamilyFor(look.Serif);
+        run.FontWeight = look.Bold ? FontWeights.Bold : FontWeights.Normal;
+        run.FontStyle = look.Italic ? FontStyles.Italic : FontStyles.Normal;
+        run.TextDecorations = look.Underline ? TextDecorations.Underline : null;
     }
 
     /// <summary>Builds a document for the editor (or for printing) from this letter.</summary>
@@ -144,11 +179,11 @@ public sealed class Letter
                 if (run.Text is null)
                     paragraph.Inlines.Add(new LineBreak { FontSize = PtToDip(run.SizePt) });
                 else
-                    paragraph.Inlines.Add(new Run(run.Text)
-                    {
-                        FontSize = PtToDip(run.SizePt),
-                        FontFamily = designs.VersionById(run.Font).Family,
-                    });
+                {
+                    var r = new Run(run.Text);
+                    Style(r, run, designs);
+                    paragraph.Inlines.Add(r);
+                }
             }
             document.Blocks.Add(paragraph);
         }
@@ -199,6 +234,10 @@ public sealed class Letter
                             : new XElement("run",
                                 new XAttribute("size", r.SizePt),
                                 r.Font != 0 ? new XAttribute("font", r.Font) : null,
+                                r.Serif ? new XAttribute("serif", true) : null,
+                                r.Bold ? new XAttribute("bold", true) : null,
+                                r.Italic ? new XAttribute("italic", true) : null,
+                                r.Underline ? new XAttribute("underline", true) : null,
                                 XmlSafe(r.Text))))))));
 
         // Write to a temporary file first so a failed save never damages the old file.
@@ -235,15 +274,24 @@ public sealed class Letter
                 letter.Fonts.Add((id, f.Elements("use").Select(u => (int?)u.Attribute("glyph") ?? 0).ToList()));
 
         var fontIds = letter.Fonts.Select(f => f.Id).ToHashSet();
+        // In a .sletter, font="serif" names the font; in a .funletter, font is the
+        // version of the child's letters and serif="true" names the font.
+        bool fromSimpleLetters = root.Name == "sletter";
         foreach (var p in root.Element("text")?.Elements("p") ?? [])
         {
             var paragraph = new LetterParagraph { SizePt = ClampSize((double?)p.Attribute("size") ?? 12) };
             foreach (var e in p.Elements())
             {
                 double size = ClampSize((double?)e.Attribute("size") ?? paragraph.SizePt);
-                int font = (int?)e.Attribute("font") ?? 0;
-                if (!fontIds.Contains(font)) font = 0;
-                if (e.Name == "run") paragraph.Runs.Add(new LetterRun(e.Value, size, font));
+                string? fontText = (string?)e.Attribute("font");
+                int font = !fromSimpleLetters && int.TryParse(fontText, out int f) && fontIds.Contains(f) ? f : 0;
+                bool serif = fromSimpleLetters ? fontText == "serif" : (bool?)e.Attribute("serif") ?? false;
+                if (e.Name == "run")
+                    paragraph.Runs.Add(new LetterRun(e.Value, size, font,
+                        Serif: serif,
+                        Bold: (bool?)e.Attribute("bold") ?? false,
+                        Italic: (bool?)e.Attribute("italic") ?? false,
+                        Underline: (bool?)e.Attribute("underline") ?? false));
                 else if (e.Name == "br") paragraph.Runs.Add(new LetterRun(null, size));
             }
             letter.Paragraphs.Add(paragraph);

@@ -14,6 +14,7 @@
     <SolidColorBrush x:Key="InkBrush" Color="#1A1A1A"/>
 
     <FontFamily x:Key="PageFont">pack://application:,,,/Fonts/#Atkinson Hyperlegible Next</FontFamily>
+    <FontFamily x:Key="SerifFont">pack://application:,,,/Fonts/#Literata</FontFamily>
 
     <!-- Toolbar buttons. Not focusable, so typing focus stays on the page. -->
     <Style x:Key="ToolButton" TargetType="Button">
@@ -110,6 +111,40 @@
       <Setter Property="Foreground" Value="{StaticResource BgBrush}"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="FontSize" Value="16"/>
+    </Style>
+
+    <!-- On/off toolbar buttons (Sans / Serif, B, I, U). A brighter, thicker
+         border shows which are on. Not focusable, so typing stays on the page. -->
+    <Style x:Key="ToggleTool" TargetType="ToggleButton">
+      <Setter Property="Height" Value="34"/>
+      <Setter Property="MinWidth" Value="34"/>
+      <Setter Property="Padding" Value="10,0"/>
+      <Setter Property="Margin" Value="0,0,6,0"/>
+      <Setter Property="Background" Value="{StaticResource BgBrush}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Foreground" Value="{StaticResource GreenBrush}"/>
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border x:Name="Box" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource GreenDimBrush}"/>
+              </Trigger>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource GreenBrush}"/>
+                <Setter TargetName="Box" Property="BorderThickness" Value="2"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
 
     <Style x:Key="Separator" TargetType="Border">
