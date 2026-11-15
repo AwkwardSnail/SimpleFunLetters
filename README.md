@@ -35,6 +35,8 @@ Both versions open and save the same `.funletter` files.
   of Done. Only that letter changes; Undo puts it back.
 - **The page (right):** the same page as SimpleLetters. The four arrows mark the
   margins: click one to show a line where the margin is, drag it to move it.
+  When the writing reaches the bottom margin it carries on onto another A4 page
+  below, whole lines at a time, the way it prints.
 - **The toolbar:** the same as SimpleLetters.
   - **Font: Sans / Font: Serif** switches the letters you haven't drawn between
     Atkinson Hyperlegible Next and Literata. Your drawn letters always stay as

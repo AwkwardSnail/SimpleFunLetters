@@ -235,6 +235,7 @@ public partial class MainWindow
         zoom = Math.Clamp(value, ZoomSteps[0], ZoomSteps[^1]);
         DeskContent.LayoutTransform = Math.Abs(zoom - 1) < 0.001 ? Transform.Identity : new ScaleTransform(zoom, zoom);
         ZoomLabel.Text = $"{zoom * 100:0}%";
+        InvalidatePages(); // the page pictures line up with the screen's pixels
         ZoomOutButton.IsEnabled = zoom > ZoomSteps[0] + 0.001;
         ZoomInButton.IsEnabled = zoom < ZoomSteps[^1] - 0.001;
         if (remember)

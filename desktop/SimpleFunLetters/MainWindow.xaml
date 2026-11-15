@@ -158,19 +158,22 @@
           <Canvas x:Name="TopRuler" Grid.Row="0" Grid.Column="1"/>
           <Canvas x:Name="SideRuler" Grid.Row="1" Grid.Column="0"/>
 
-          <!-- Shadow sits behind the page so the effect doesn't soften the text. -->
-          <Border x:Name="PageShadow" Grid.Row="1" Grid.Column="1" Background="{StaticResource PaperBrush}">
-            <Border.Effect>
-              <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.6" Color="Black"/>
-            </Border.Effect>
-          </Border>
+          <!-- The paper: one white A4 sheet per page, made in MainWindow.Pages.cs.
+               The shadows sit behind the text so the effect doesn't soften it. -->
+          <Canvas x:Name="Sheets" Grid.Row="1" Grid.Column="1"/>
 
-          <Grid x:Name="Page" Grid.Row="1" Grid.Column="1" Background="{StaticResource PaperBrush}" ClipToBounds="True">
-            <!-- Rich text only so each piece of text keeps its own size and
-                 letter drawings; bold, italic and the like are switched off in code. -->
+          <!-- Everything drawn on the sheets. Transparent, so the desk shows between pages. -->
+          <Grid x:Name="Page" Grid.Row="1" Grid.Column="1" Background="Transparent" ClipToBounds="True">
+            <!-- What you see: one picture of the editor's text per page (MainWindow.Pages.cs). -->
+            <Canvas x:Name="Slices" IsHitTestVisible="False" UseLayoutRounding="False"/>
+            <!-- The editor itself is one long column of text. It is kept invisible and
+                 moved under the mouse, page by page, so clicks land on the right line. -->
+            <Canvas x:Name="EditorHost" Opacity="0" UseLayoutRounding="False">
+            <!-- Rich text so each piece of text keeps its own size, style and
+                 letter drawings. Alignment, lists and the like are switched off in code. -->
             <RichTextBox x:Name="Editor"
                          AcceptsReturn="True" AcceptsTab="True"
-                         VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled"
+                         VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
                          BorderThickness="0" Padding="0" Background="Transparent"
                          Foreground="{StaticResource InkBrush}" CaretBrush="{StaticResource InkBrush}"
                          FontFamily="{StaticResource PageFont}"
@@ -188,12 +191,10 @@
                 </Style>
               </RichTextBox.Resources>
             </RichTextBox>
+            </Canvas>
             <Canvas x:Name="Guides" IsHitTestVisible="False"/>
           </Grid>
 
-          <TextBlock x:Name="OverflowNote" Grid.Row="2" Grid.Column="1" Visibility="Collapsed"
-                     Text="The text runs past the bottom of the page."
-                     Foreground="{StaticResource GreenDimBrush}" HorizontalAlignment="Center" Margin="0,14,0,0"/>
         </Grid>
       </ScrollViewer>
     </Grid>
