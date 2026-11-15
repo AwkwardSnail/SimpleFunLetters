@@ -111,6 +111,7 @@ public partial class MainWindow : Window
         Designs.CleanUpOldFonts();
         designs = NewDesigns();
         BuildLetterTiles();
+        Drawing.HintChanged += Drawing_HintChanged;
         ShowLetter(new Letter { Paragraphs = { new LetterParagraph { SizePt = currentSizePt } } });
         UpdateLayoutForMargins();
         UpdateFormatControls();

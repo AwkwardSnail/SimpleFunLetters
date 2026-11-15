@@ -109,8 +109,12 @@
           <ScrollViewer x:Name="DrawView" VerticalScrollBarVisibility="Auto" Focusable="False" Visibility="Collapsed">
             <StackPanel Margin="18,16,18,24" HorizontalAlignment="Center">
               <TextBlock x:Name="DrawTitle" Text="Draw your A" FontSize="20" Margin="0,0,0,4"/>
-              <TextBlock Text="Click and drag on the squares. The right mouse button rubs out. Letters sit on the green line; tails like the one on g hang below it."
-                         Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Width="360" Margin="0,0,0,14"
+              <!-- What to do next: changes with the tool (and each step of an arc). -->
+              <TextBlock x:Name="DrawHint" Text="Click and drag on the squares to draw. The right mouse button rubs out."
+                         Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Width="360" MinHeight="40"
+                         HorizontalAlignment="Left"/>
+              <TextBlock Text="Letters sit on the green line; tails like the one on g hang below it."
+                         Foreground="{StaticResource GreenDimBrush}" TextWrapping="Wrap" Width="360" Margin="0,0,0,12"
                          HorizontalAlignment="Left"/>
 
               <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" HorizontalAlignment="Left">
@@ -119,11 +123,26 @@
 
               <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
                 <RadioButton x:Name="PenTool" Style="{StaticResource ToolRadio}" Content="Pen" IsChecked="True"
-                             GroupName="Tool" Checked="Tool_Checked"/>
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw by clicking and dragging"/>
                 <RadioButton x:Name="EraserTool" Style="{StaticResource ToolRadio}" Content="Eraser"
-                             GroupName="Tool" Checked="Tool_Checked"/>
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Rub out by clicking and dragging"/>
+                <RadioButton x:Name="LineTool" Style="{StaticResource ToolRadio}" Content="Line"
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw a straight line"/>
+                <RadioButton x:Name="ArcTool" Style="{StaticResource ToolRadio}" Content="Arc"
+                             GroupName="Tool" Checked="Tool_Checked" ToolTip="Draw part of a circle"/>
                 <Button Style="{StaticResource ToolButton}" Content="Clear" Click="ClearDrawing_Click"
                         ToolTip="Rub out the whole drawing. Done with nothing drawn goes back to the normal letter."/>
+              </StackPanel>
+
+              <!-- The size of the squares. Changing it fits the drawing onto the new squares. -->
+              <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <TextBlock Text="Squares" Foreground="{StaticResource GreenDimBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <RadioButton x:Name="LargeSquares" Style="{StaticResource ToolRadio}" Content="Large" Tag="24"
+                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Big squares: quick, blocky letters (18 × 24)"/>
+                <RadioButton x:Name="MediumSquares" Style="{StaticResource ToolRadio}" Content="Medium" Tag="40"
+                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Medium squares for more detail (30 × 40)"/>
+                <RadioButton x:Name="SmallSquares" Style="{StaticResource ToolRadio}" Content="Small" Tag="60"
+                             GroupName="Squares" Checked="Squares_Checked" ToolTip="Small squares for the finest detail (45 × 60)"/>
               </StackPanel>
 
               <StackPanel Orientation="Horizontal" Margin="0,20,0,0">

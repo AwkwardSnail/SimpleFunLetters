@@ -23,12 +23,22 @@ Both versions open and save the same `.funletter` files.
 - **Your letters (left):** capital letters, small letters, punctuation and
   numbers. Click one to draw your own. Letters you haven't drawn use the normal
   font: Atkinson Hyperlegible Next, or Literata when the font is set to Serif.
-- **Drawing a letter:** squared paper 18 squares wide and 24 tall. Click and
-  drag on the squares; the right mouse button
-  rubs out (or choose Eraser). The normal letter shows faintly behind as a
-  guide. Letters sit on the green line; tails like the one on g hang below it.
-  Press **Done** to start using it, or **Cancel** to leave the letter as it was.
-  Clearing the squares and pressing Done goes back to the normal letter.
+- **Drawing a letter:** squared paper with the normal letter showing faintly
+  behind as a guide. Letters sit on the green line; tails like the one on g
+  hang below it. The line above the paper always says what to do next.
+  - **Pen** and **Eraser:** click and drag. The right mouse button rubs out.
+  - **Line:** press where the line starts, drag, and let go where it ends (the
+    right mouse button rubs a line out).
+  - **Arc:** click the middle of the circle; a dashed circle follows the mouse,
+    so click when it's the size you want. The pointer then sticks to the
+    circle: click a yellow cross where the arc starts and another where it
+    ends, and the arc joins them the short way round. Esc or the right mouse
+    button starts the arc again.
+  - **Squares:** Large (18 × 24), Medium (30 × 40) or Small (45 × 60) for finer
+    detail. Changing the size fits the drawing onto the new squares. Each
+    letter keeps its own size, and new drawings start with the last size used.
+  - Press **Done** to start using it, or **Cancel** to leave the letter as it
+    was. Clearing the squares and pressing Done goes back to the normal letter.
 - **Changing a letter later:** what you've already written keeps the drawing it
   was typed with, and only new typing uses the new drawing. To change the letter
   in what you've already written too, press **Apply to existing text** instead
@@ -88,8 +98,10 @@ typing uses), and the text with its sizes and the font version of each piece.
 A `run` without a `font` uses the normal letters. A run can also have
 `serif="true"`, `bold="true"`, `italic="true"` and `underline="true"`; without
 them it is plain Sans. (SimpleLetters' `.sletter` files write `font="serif"`
-instead, and open with their fonts and styles.) Drawings made on the first
-version's 12 × 16 grid are scaled up to fit when they're opened. SimpleLetters Fun can also
+instead, and open with their fonts and styles.) Each drawing records its own
+size in `columns` and `rows` (18 × 24, 30 × 40 or 45 × 60); the writing line is
+always three quarters of the way down. Drawings made on the first version's
+12 × 16 grid are scaled up to 18 × 24 when they're opened. SimpleLetters Fun can also
 open SimpleLetters' `.sletter` files and plain `.txt` files.
 
 ## How it works

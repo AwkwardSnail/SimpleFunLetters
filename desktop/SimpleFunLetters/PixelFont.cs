@@ -5,31 +5,52 @@ using System.Text;
 namespace SimpleFunLetters;
 
 /// <summary>
-/// The drawing grid for one character. Rows run top to bottom; the bottom
-/// <see cref="DescentRows"/> rows hang below the line, for the tails of g, j, p, q and y.
+/// The squared paper one character is drawn on. A drawing is a bool[rows, columns],
+/// rows top to bottom. Every size keeps the same shape (3 columns for every 4
+/// rows) and puts the writing line three quarters of the way down; the rows
+/// below it are for the tails of g, j, p, q and y.
 /// </summary>
 public static class Grid
 {
+    /// <summary>The sizes a letter can be drawn at: large squares (the first
+    /// and default size), medium and small squares for finer detail.</summary>
+    public static readonly (int Columns, int Rows)[] Sizes = [(18, 24), (30, 40), (45, 60)];
+
+    // The default size, as used before sizes could be chosen.
     public const int Columns = 18;
     public const int Rows = 24;
     public const int DescentRows = 6;
     public const int AscentRows = Rows - DescentRows; // rows sitting on the line
 
+    /// <summary>Rows sitting on the writing line, for a grid of this many rows.</summary>
+    public static int AscentRowsFor(int rows) => rows * 3 / 4;
+
+    public static int RowsOf(bool[,] pixels) => pixels.GetLength(0);
+    public static int ColumnsOf(bool[,] pixels) => pixels.GetLength(1);
+
+    public static bool IsSize(int columns, int rows) => Sizes.Contains((columns, rows));
+
     public static bool[,] Empty() => new bool[Rows, Columns];
+    public static bool[,] Empty(int columns, int rows) => new bool[rows, columns];
 
     /// <summary>
-    /// Fits a drawing made on a grid of another size (such as the 12 × 16 grid
-    /// of the first version) onto this one, square by square. Both grids put
-    /// the writing line three quarters of the way down, so letters stay on it.
+    /// Fits a drawing made on a grid of another size onto the default one,
+    /// square by square (used for drawings from the first version's 12 × 16 grid).
     /// </summary>
-    public static bool[,] Resample(bool[,] source)
+    public static bool[,] Resample(bool[,] source) => Resample(source, Columns, Rows);
+
+    /// <summary>
+    /// Fits a drawing onto a grid of another size, square by square. All sizes
+    /// put the writing line three quarters of the way down, so letters stay on it.
+    /// </summary>
+    public static bool[,] Resample(bool[,] source, int columns, int rows)
     {
-        int rows = source.GetLength(0), cols = source.GetLength(1);
-        if (rows == Rows && cols == Columns) return Copy(source);
-        var result = Empty();
-        for (int r = 0; r < Rows; r++)
-            for (int c = 0; c < Columns; c++)
-                result[r, c] = source[r * rows / Rows, c * cols / Columns];
+        int fromRows = RowsOf(source), fromCols = ColumnsOf(source);
+        if (fromRows == rows && fromCols == columns) return Copy(source);
+        var result = Empty(columns, rows);
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < columns; c++)
+                result[r, c] = source[r * fromRows / rows, c * fromCols / columns];
         return result;
     }
 
@@ -41,8 +62,9 @@ public static class Grid
 
     public static bool SameAs(bool[,] a, bool[,] b)
     {
-        for (int r = 0; r < Rows; r++)
-            for (int c = 0; c < Columns; c++)
+        if (RowsOf(a) != RowsOf(b) || ColumnsOf(a) != ColumnsOf(b)) return false;
+        for (int r = 0; r < RowsOf(a); r++)
+            for (int c = 0; c < ColumnsOf(a); c++)
                 if (a[r, c] != b[r, c]) return false;
         return true;
     }
@@ -57,8 +79,10 @@ public static class Grid
 /// </summary>
 public static class PixelFont
 {
-    const int Pixel = 50;                         // one square, in font units
-    const int UnitsPerEm = Grid.Rows * Pixel;     // the whole grid is one em (1200)
+    // The whole grid is one em, whatever its size: 1200 font units, which
+    // every grid size divides evenly (24 rows: squares of 50; 40: 30; 60: 20).
+    const int UnitsPerEm = 1200;
+    const int Pixel = UnitsPerEm / Grid.Rows;     // a square of the default grid (50)
     const int Ascender = UnitsPerEm * 950 / 1024; // line spacing close to Atkinson Hyperlegible
     const int Descender = UnitsPerEm * 300 / 1024;
 
@@ -111,28 +135,34 @@ public static class PixelFont
     /// <summary>Turns lit pixels into rectangles, one per run of pixels in a row.</summary>
     static GlyphData MakeGlyph(char ch, bool[,] pixels)
     {
+        // This drawing's own grid: its squares are smaller the more rows it has.
+        int rows = Grid.RowsOf(pixels), columns = Grid.ColumnsOf(pixels);
+        int pixel = UnitsPerEm / rows;
+        int ascentRows = Grid.AscentRowsFor(rows);
+
         int minCol = int.MaxValue, maxCol = -1;
-        for (int r = 0; r < Grid.Rows; r++)
-            for (int c = 0; c < Grid.Columns; c++)
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < columns; c++)
                 if (pixels[r, c]) { minCol = Math.Min(minCol, c); maxCol = Math.Max(maxCol, c); }
 
-        // Half a pixel of space each side of the drawing.
+        // Space each side of the drawing: half a square of the default grid,
+        // so letters drawn at different sizes sit evenly together.
         const int side = Pixel / 2;
-        int advance = (maxCol - minCol + 1) * Pixel + 2 * side;
+        int advance = (maxCol - minCol + 1) * pixel + 2 * side;
 
         var rects = new List<(int x0, int y0, int x1, int y1)>();
-        for (int r = 0; r < Grid.Rows; r++)
+        for (int r = 0; r < rows; r++)
         {
             int c = 0;
-            while (c < Grid.Columns)
+            while (c < columns)
             {
                 if (!pixels[r, c]) { c++; continue; }
                 int start = c;
-                while (c < Grid.Columns && pixels[r, c]) c++;
-                int x0 = side + (start - minCol) * Pixel;
-                int x1 = side + (c - minCol) * Pixel;
-                int yTop = (Grid.AscentRows - r) * Pixel;
-                int yBottom = yTop - Pixel;
+                while (c < columns && pixels[r, c]) c++;
+                int x0 = side + (start - minCol) * pixel;
+                int x1 = side + (c - minCol) * pixel;
+                int yTop = (ascentRows - r) * pixel;
+                int yBottom = yTop - pixel;
                 // Overlap the row below by one unit so no hairline gap shows between rows.
                 rects.Add((x0, yBottom - 1, x1, yTop));
             }

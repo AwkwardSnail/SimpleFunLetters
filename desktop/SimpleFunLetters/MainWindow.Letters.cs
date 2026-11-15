@@ -67,12 +67,13 @@ public partial class MainWindow
     static DrawingImage PixelImage(bool[,] pixels, Brush ink)
     {
         var shapes = new GeometryGroup();
-        for (int r = 0; r < Grid.Rows; r++)
-            for (int c = 0; c < Grid.Columns; c++)
+        int rows = Grid.RowsOf(pixels), columns = Grid.ColumnsOf(pixels);
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < columns; c++)
                 if (pixels[r, c]) shapes.Children.Add(new RectangleGeometry(new Rect(c, r, 1, 1)));
 
         var group = new DrawingGroup();
-        group.Children.Add(new GeometryDrawing(Brushes.Transparent, null, new RectangleGeometry(new Rect(0, 0, Grid.Columns, Grid.Rows))));
+        group.Children.Add(new GeometryDrawing(Brushes.Transparent, null, new RectangleGeometry(new Rect(0, 0, columns, rows))));
         group.Children.Add(new GeometryDrawing(ink, null, shapes));
         var image = new DrawingImage(group);
         image.Freeze();
@@ -105,8 +106,13 @@ public partial class MainWindow
         DrawTitle.Text = $"Draw your {Describe(c)}";
         Drawing.GuideCharacter = c;
         Drawing.GuideFont = NormalFont;
-        Drawing.Pixels = designs.CurrentDrawing(c) ?? Grid.Empty();
+        // An existing drawing keeps its own squares; a new one starts with the last size used.
+        var (columns, rows) = Grid.Sizes.FirstOrDefault(s => s.Rows == settings.DrawingRows, Grid.Sizes[0]);
+        Drawing.Pixels = designs.CurrentDrawing(c) ?? Grid.Empty(columns, rows);
+        ShowSquaresSize();
         PenTool.IsChecked = true;
+        Drawing.Tool = DrawingTool.Pen;
+        DrawHint.Text = Drawing.Hint;
         LettersView.Visibility = Visibility.Collapsed;
         DrawView.Visibility = Visibility.Visible;
     }
@@ -121,8 +127,37 @@ public partial class MainWindow
     void Tool_Checked(object sender, RoutedEventArgs e)
     {
         // Also fires while the window is still loading, before every control exists.
-        if (Drawing is null || EraserTool is null) return;
-        Drawing.Erasing = EraserTool.IsChecked == true;
+        if (Drawing is null || ArcTool is null || DrawHint is null) return;
+        Drawing.Tool = sender == EraserTool ? DrawingTool.Eraser
+            : sender == LineTool ? DrawingTool.Line
+            : sender == ArcTool ? DrawingTool.Arc
+            : DrawingTool.Pen;
+    }
+
+    void Drawing_HintChanged(object? sender, EventArgs e) => DrawHint.Text = Drawing.Hint;
+
+    bool showingSquaresSize;
+
+    /// <summary>Lights the Large / Medium / Small button for the drawing's own squares.</summary>
+    void ShowSquaresSize()
+    {
+        showingSquaresSize = true;
+        int rows = Grid.RowsOf(Drawing.Pixels);
+        LargeSquares.IsChecked = rows == 24;
+        MediumSquares.IsChecked = rows == 40;
+        SmallSquares.IsChecked = rows == 60;
+        showingSquaresSize = false;
+    }
+
+    /// <summary>Changes the size of the squares; the drawing is fitted onto the new ones.</summary>
+    void Squares_Checked(object sender, RoutedEventArgs e)
+    {
+        if (showingSquaresSize || Drawing is null || sender is not FrameworkElement { Tag: string tag }) return;
+        int rows = int.Parse(tag);
+        var (columns, _) = Grid.Sizes.First(s => s.Rows == rows);
+        Drawing.SetSize(columns, rows);
+        settings.DrawingRows = rows; // new drawings start with these squares
+        settings.Save();
     }
 
     void ClearDrawing_Click(object sender, RoutedEventArgs e) => Drawing.Clear();

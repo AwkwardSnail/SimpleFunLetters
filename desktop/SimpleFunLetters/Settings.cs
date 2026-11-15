@@ -20,6 +20,8 @@ public sealed class Settings
     public bool Serif { get; set; }
     /// <summary>Page zoom (1 = actual size). 0 until chosen: the page then fits the window.</summary>
     public double Zoom { get; set; }
+    /// <summary>The size of squares new drawings start with: rows in the grid (24, 40 or 60).</summary>
+    public int DrawingRows { get; set; } = Grid.Rows;
 
     public bool LineTop { get; set; }
     public bool LineBottom { get; set; }

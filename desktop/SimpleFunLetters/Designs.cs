@@ -296,10 +296,10 @@ public static class GlyphXml
     public static XElement Write(Glyph g) => new("glyph",
         new XAttribute("id", g.Id),
         new XAttribute("char", g.Char.ToString()),
-        new XAttribute("columns", Grid.Columns),
-        new XAttribute("rows", Grid.Rows),
-        Enumerable.Range(0, Grid.Rows).Select(r => new XElement("row",
-            new string(Enumerable.Range(0, Grid.Columns).Select(c => g.Pixels[r, c] ? '#' : '.').ToArray()))));
+        new XAttribute("columns", Grid.ColumnsOf(g.Pixels)),
+        new XAttribute("rows", Grid.RowsOf(g.Pixels)),
+        Enumerable.Range(0, Grid.RowsOf(g.Pixels)).Select(r => new XElement("row",
+            new string(Enumerable.Range(0, Grid.ColumnsOf(g.Pixels)).Select(c => g.Pixels[r, c] ? '#' : '.').ToArray()))));
 
     /// <summary>Reads a drawing, scaling it to today's grid if it was drawn on another size.</summary>
     public static Glyph? Read(XElement e)
@@ -318,6 +318,9 @@ public static class GlyphXml
         for (int r = 0; r < Math.Min(rows.Count, rowCount); r++)
             for (int c = 0; c < Math.Min(rows[r].Length, colCount); c++)
                 source[r, c] = rows[r][c] == '#';
-        return new Glyph((int?)e.Attribute("id") ?? 0, ch[0], Grid.Resample(source));
+        // Drawings at one of today's sizes keep it; others (the first version's
+        // 12 × 16, or anything unexpected) are fitted onto the default grid.
+        var pixels = Grid.IsSize(colCount, rowCount) ? source : Grid.Resample(source);
+        return new Glyph((int?)e.Attribute("id") ?? 0, ch[0], pixels);
     }
 }
