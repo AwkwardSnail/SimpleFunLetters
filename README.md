@@ -44,8 +44,10 @@ Both versions open and save the same `.funletter` files.
     was. Clearing the squares and pressing Done goes back to the normal letter.
 - **Changing a letter later:** what you've already written keeps the drawing it
   was typed with, and only new typing uses the new drawing. To change the letter
-  in what you've already written too, press **Apply to existing text** instead
-  of Done. Only that letter changes; Undo puts it back.
+  in what you've already written too, press **Apply to existing text**. Only
+  that letter changes, and Undo (in the toolbar) puts it back. The drawing stays
+  open so you can see how it looks and keep changing it; press Done or Cancel
+  when you've finished.
 - **The page (right):** the same page as SimpleLetters. The four arrows mark the
   margins: click one to show a line where the margin is, drag it to move it.
   When the writing reaches the bottom margin it carries on onto another A4 page

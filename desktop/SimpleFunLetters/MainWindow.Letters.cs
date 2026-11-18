@@ -196,8 +196,8 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Like Done, and also changes this character everywhere it has already
-    /// been written. Only this character changes: other letters in that text
+    /// Uses the drawing from now on, like Done, and also changes this character
+    /// everywhere it has already been written, leaving the drawing open. Only this character changes: other letters in that text
     /// keep their drawings. One Undo puts the old text back.
     /// </summary>
     void ApplyToExisting_Click(object sender, RoutedEventArgs e)
@@ -231,9 +231,9 @@ public partial class MainWindow
         }
         Editor.LockCurrentUndoUnit();
         if (changed) MarkDirty();
-
-        CloseDrawing();
-        Editor.Focus();
+        // The drawing stays open, so the letter can be tried in the writing and drawn
+        // again. Done or Cancel then go back to the letters (Done with no further
+        // change makes no new version).
     }
 
     static IEnumerable<Run> AllRuns(IEnumerable<Block> blocks)
